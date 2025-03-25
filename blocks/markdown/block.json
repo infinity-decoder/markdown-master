@@ -1,0 +1,12 @@
+{
+    "apiVersion": 2,
+    "name": "markdown-master/markdown",
+    "title": "Markdown Block",
+    "category": "widgets",
+    "icon": "editor-code",
+    "description": "A block for writing Markdown.",
+    "supports": {
+        "html": false
+    },
+    "editorScript": "file:./index.js"
+}
