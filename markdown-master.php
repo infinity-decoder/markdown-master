@@ -1,52 +1,68 @@
 <?php
 /**
- * Plugin Name: Markdown Master
- * Plugin URI: https://infinitydecoder.net
- * Description: A Markdown and Code Writing Plugin for WordPress.
- * Version: 1.0.0
- * Author: Infinity Decoder
- * Author URI: https://infinitydecoder.net
- * License: GPL v2 or later
+ * Plugin Name:       Markdown Master
+ * Plugin URI:        https://infinitydecoder.com
+ * Description:       A powerful plugin to create quizzes, markdown notes, and code snippets with import/export and analytics.
+ * Version:           1.0.0
+ * Author:            Infinity Decoder
+ * Author URI:        https://infinitydecoder.com
+ * License:           GPL-2.0+
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.txt
+ * Text Domain:       markdown-master
+ * Domain Path:       /languages
  */
 
-if (!defined('ABSPATH')) {
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Define Plugin Path
-define('MARKDOWN_MASTER_PLUGIN_DIR', plugin_dir_path(__FILE__));
+/**
+ * Define plugin constants
+ */
+define( 'MM_VERSION', '1.0.0' );
+define( 'MM_PLUGIN_FILE', __FILE__ );
+define( 'MM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'MM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'MM_INCLUDES', MM_PLUGIN_DIR . 'includes/' );
+define( 'MM_ADMIN', MM_PLUGIN_DIR . 'admin/' );
+define( 'MM_PUBLIC', MM_PLUGIN_DIR . 'public/' );
+define( 'MM_ASSETS', MM_PLUGIN_DIR . 'assets/' );
 
-// Load the Main Plugin Class
-require_once MARKDOWN_MASTER_PLUGIN_DIR . 'includes/class-markdown-master.php';
-
-// Enqueue Scripts Properly
-function markdown_master_enqueue_scripts() {
-    if (is_admin()) {
-        wp_enqueue_script(
-            'markdown-it', 
-            plugin_dir_url(__FILE__) . 'assets/vendor/markdown-it.min.js', 
-            array(), 
-            '12.0.0', 
-            true
-        );
+/**
+ * Autoloader for classes
+ */
+spl_autoload_register( function ( $class ) {
+    if ( strpos( $class, 'MM_' ) === 0 ) {
+        $filename = 'class-' . strtolower( str_replace( '_', '-', $class ) ) . '.php';
+        $filepath = MM_INCLUDES . $filename;
+        if ( file_exists( $filepath ) ) {
+            require_once $filepath;
+        }
     }
-}
-add_action('admin_enqueue_scripts', 'markdown_master_enqueue_scripts');
+});
 
-// Activation Hook
-function markdown_master_activate() {
-    Markdown_Master::activate();
+/**
+ * Activation and Deactivation Hooks
+ */
+function mm_activate_plugin() {
+    require_once MM_INCLUDES . 'class-mm-activator.php';
+    MM_Activator::activate();
 }
-register_activation_hook(__FILE__, 'markdown_master_activate');
+register_activation_hook( __FILE__, 'mm_activate_plugin' );
 
-// Deactivation Hook
-function markdown_master_deactivate() {
-    Markdown_Master::deactivate();
+function mm_deactivate_plugin() {
+    require_once MM_INCLUDES . 'class-mm-deactivator.php';
+    MM_Deactivator::deactivate();
 }
-register_deactivation_hook(__FILE__, 'markdown_master_deactivate');
+register_deactivation_hook( __FILE__, 'mm_deactivate_plugin' );
 
-// Initialize Plugin
-function run_markdown_master() {
-    new Markdown_Master();
+/**
+ * Initialize the plugin
+ */
+function mm_run_plugin() {
+    require_once MM_INCLUDES . 'class-mm-loader.php';
+    $plugin = new MM_Loader();
+    $plugin->run();
 }
-add_action('plugins_loaded', 'run_markdown_master');
+add_action( 'plugins_loaded', 'mm_run_plugin' );
