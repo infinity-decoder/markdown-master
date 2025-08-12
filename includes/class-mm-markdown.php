@@ -3,7 +3,8 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
-
+// Load Parsedown library from vendor
+require_once plugin_dir_path( __FILE__ ) . '../vendor/parsedown/Parsedown.php';
 /**
  * Class MM_Markdown
  * Render markdown safely using Parsedown if available, otherwise fallback.

@@ -3,6 +3,10 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+// Load phpspreadsheet library from vendor
+require_once plugin_dir_path( __FILE__ ) . '../vendor/phpspreadsheet/src/PhpSpreadsheet/Spreadsheet.php';
+require_once plugin_dir_path( __FILE__ ) . '../vendor/phpspreadsheet/src/PhpSpreadsheet/Writer/Xlsx.php';
+require_once plugin_dir_path( __FILE__ ) . '../vendor/phpspreadsheet/src/PhpSpreadsheet/IOFactory.php';
 
 /**
  * Class MM_Import_Export
