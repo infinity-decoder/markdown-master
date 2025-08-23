@@ -5,165 +5,160 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class MM_Shortcodes
- * Register and render shortcodes for quizzes, notes and code snippets.
+ * Shortcodes: [mm_quiz id="123"]
+ *
+ * Renders quiz form on frontend and lets the front-end JS submit attempts.
+ * Relies on MM_Quiz model (includes/class-mm-quiz.php) to fetch quizzes & questions.
  */
-class MM_Shortcodes {
 
-    protected $quiz;
-    protected $note;
-    protected $snippet;
+if ( ! class_exists( 'MM_Shortcodes' ) ) {
 
-    public function __construct() {
-        // Ensure required classes exist
-        if ( ! class_exists( 'MM_Quiz' ) ) {
-            require_once MM_INCLUDES . 'class-mm-quiz.php';
-        }
-        if ( ! class_exists( 'MM_Note' ) ) {
-            require_once MM_INCLUDES . 'class-mm-note.php';
-        }
-        if ( ! class_exists( 'MM_Snippet' ) ) {
-            require_once MM_INCLUDES . 'class-mm-snippet.php';
-        }
+    class MM_Shortcodes {
 
-        $this->quiz = new MM_Quiz();
-        $this->note = new MM_Note();
-        $this->snippet = new MM_Snippet();
+        protected $quiz_model;
 
-        add_shortcode( 'mm_quiz', [ $this, 'render_quiz_shortcode' ] );
-        add_shortcode( 'mm_note', [ $this, 'render_note_shortcode' ] );
-        add_shortcode( 'mm_code', [ $this, 'render_code_shortcode' ] );
-    }
+        public function __construct() {
+            // Ensure MM_Quiz class is available
+            if ( ! class_exists( 'MM_Quiz' ) ) {
+                $quiz_file = __DIR__ . '/class-mm-quiz.php';
+                if ( file_exists( $quiz_file ) ) {
+                    require_once $quiz_file;
+                }
+            }
 
-    /**
-     * Render quiz by ID: [mm_quiz id="123"]
-     */
-    public function render_quiz_shortcode( $atts ) {
-        $atts = shortcode_atts( [ 'id' => 0, 'show_title' => 'true' ], $atts, 'mm_quiz' );
-        $quiz_id = intval( $atts['id'] );
-        if ( ! $quiz_id ) {
-            return '<div class="mm-alert mm-alert-error">Quiz ID not provided.</div>';
+            $this->quiz_model = class_exists( 'MM_Quiz' ) ? new MM_Quiz() : null;
+
+            add_shortcode( 'mm_quiz', [ $this, 'render_quiz_shortcode' ] );
         }
 
-        $quiz = $this->quiz->get_quiz( $quiz_id );
-        if ( ! $quiz ) {
-            return '<div class="mm-alert mm-alert-error">Quiz not found.</div>';
-        }
+        /**
+         * Render the quiz shortcode
+         *
+         * Usage: [mm_quiz id="123"]
+         */
+        public function render_quiz_shortcode( $atts = array() ) {
+            $atts = shortcode_atts( array(
+                'id' => 0,
+            ), $atts, 'mm_quiz' );
 
-        // Basic HTML for frontend quiz rendering.
-        ob_start();
-        if ( filter_var( $atts['show_title'], FILTER_VALIDATE_BOOLEAN ) ) {
-            echo '<h3 class="mm-quiz-title">' . esc_html( $quiz->title ) . '</h3>';
-        }
-        echo '<div class="mm-quiz" data-quiz-id="' . esc_attr( $quiz_id ) . '">';
-        echo '<div class="mm-quiz-desc">' . wp_kses_post( $quiz->description ) . '</div>';
+            $quiz_id = intval( $atts['id'] );
+            if ( $quiz_id <= 0 ) {
+                return '<p>' . esc_html__( 'Invalid quiz ID.', 'markdown-master' ) . '</p>';
+            }
 
-        // Questions
-        $questions = $this->quiz->get_questions_by_quiz( $quiz_id );
-        if ( empty( $questions ) ) {
-            echo '<p>' . esc_html__( 'No questions available for this quiz.', 'markdown-master' ) . '</p>';
+            if ( ! $this->quiz_model ) {
+                return '<p>' . esc_html__( 'Quiz module is unavailable.', 'markdown-master' ) . '</p>';
+            }
+
+            $quiz = $this->quiz_model->get_quiz( $quiz_id, true );
+            if ( ! $quiz ) {
+                return '<p>' . esc_html__( 'Quiz not found.', 'markdown-master' ) . '</p>';
+            }
+
+            // Enqueue public assets (script & style) - MM_Frontend also enqueues but ensure present
+            if ( function_exists( 'wp_enqueue_script' ) ) {
+                // Registering is fine even if done twice, WP handles it.
+                $frontend_file = __DIR__ . '/class-mm-frontend.php';
+                // Try to let frontend class handle enqueues; if not loaded, just enqueue directly
+                wp_enqueue_script( 'mm-public' ); // noop if not registered
+                wp_enqueue_style( 'mm-public-css' );
+            }
+
+            ob_start();
+            ?>
+            <div class="mm-quiz-wrap" id="mm-quiz-<?php echo esc_attr( $quiz_id ); ?>">
+                <form class="mm-quiz-form" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>" method="post" onsubmit="return false;">
+                    <input type="hidden" name="quiz_id" value="<?php echo esc_attr( $quiz_id ); ?>">
+
+                    <h3 class="mm-quiz-title"><?php echo esc_html( $quiz['title'] ); ?></h3>
+
+                    <div class="mm-student-fields">
+                        <p><label><?php esc_html_e( 'Name', 'markdown-master' ); ?> <input type="text" name="student[name]" required></label></p>
+                        <p><label><?php esc_html_e( 'Class', 'markdown-master' ); ?> <input type="text" name="student[class]"></label></p>
+                        <p><label><?php esc_html_e( 'Section', 'markdown-master' ); ?> <input type="text" name="student[section]"></label></p>
+                        <p><label><?php esc_html_e( 'School', 'markdown-master' ); ?> <input type="text" name="student[school]"></label></p>
+                        <p><label><?php esc_html_e( 'Roll No (optional)', 'markdown-master' ); ?> <input type="text" name="student[roll]"></label></p>
+                    </div>
+
+                    <div class="mm-questions">
+                        <?php
+                        if ( empty( $quiz['questions'] ) ) {
+                            echo '<p>' . esc_html__( 'No questions added to this quiz yet.', 'markdown-master' ) . '</p>';
+                        } else {
+                            foreach ( $quiz['questions'] as $q ) :
+                                $q_id = intval( $q['id'] );
+                                $q_type = isset( $q['question_type'] ) ? $q['question_type'] : 'mcq';
+                                $question_text = wp_kses_post( $q['question_text'] );
+                                $options = isset( $q['options'] ) ? $q['options'] : array();
+                                ?>
+                                <div class="mm-question" data-qid="<?php echo esc_attr( $q_id ); ?>" data-qtype="<?php echo esc_attr( $q_type ); ?>">
+                                    <div class="mm-question-text"><?php echo $question_text; ?></div>
+
+                                    <div class="mm-question-inputs">
+                                        <?php if ( $q_type === 'mcq' ) : ?>
+                                            <?php if ( ! empty( $options ) && is_array( $options ) ) : ?>
+                                                <?php foreach ( $options as $opt_index => $opt_val ) : 
+                                                    $opt_val = is_scalar( $opt_val ) ? (string) $opt_val : wp_json_encode( $opt_val);
+                                                    ?>
+                                                    <label class="mm-opt">
+                                                        <input type="radio"
+                                                               name="answers[<?php echo esc_attr( $q_id ); ?>]"
+                                                               value="<?php echo esc_attr( $opt_val ); ?>">
+                                                        <?php echo esc_html( $opt_val ); ?>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <em><?php esc_html_e( 'No options for this question.', 'markdown-master' ); ?></em>
+                                            <?php endif; ?>
+
+                                        <?php elseif ( $q_type === 'checkbox' ) : ?>
+                                            <?php if ( ! empty( $options ) && is_array( $options ) ) : ?>
+                                                <?php foreach ( $options as $opt_index => $opt_val ) : 
+                                                    $opt_val = is_scalar( $opt_val ) ? (string) $opt_val : wp_json_encode( $opt_val);
+                                                    ?>
+                                                    <label class="mm-opt">
+                                                        <input type="checkbox"
+                                                               name="answers[<?php echo esc_attr( $q_id ); ?>][]"
+                                                               value="<?php echo esc_attr( $opt_val ); ?>">
+                                                        <?php echo esc_html( $opt_val ); ?>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <em><?php esc_html_e( 'No options for this question.', 'markdown-master' ); ?></em>
+                                            <?php endif; ?>
+
+                                        <?php elseif ( $q_type === 'text' ) : ?>
+                                            <input type="text" name="answers[<?php echo esc_attr( $q_id ); ?>]" class="mm-text-answer">
+
+                                        <?php elseif ( $q_type === 'textarea' ) : ?>
+                                            <textarea name="answers[<?php echo esc_attr( $q_id ); ?>]" class="mm-text-answer"></textarea>
+
+                                        <?php else : ?>
+                                            <input type="text" name="answers[<?php echo esc_attr( $q_id ); ?>]">
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php } ?>
+                    </div>
+
+                    <div class="mm-quiz-actions">
+                        <button type="button" class="button mm-submit-quiz"><?php esc_html_e( 'Submit Quiz', 'markdown-master' ); ?></button>
+                        <button type="button" class="button mm-download-pdf" style="display:none;"><?php esc_html_e( 'Download PDF', 'markdown-master' ); ?></button>
+                    </div>
+
+                    <div class="mm-quiz-result" style="display:none;"></div>
+                </form>
+            </div>
+            <?php
             return ob_get_clean();
         }
-
-        echo '<form class="mm-quiz-form" data-quiz-id="' . esc_attr( $quiz_id ) . '">';
-        // optional user info fields (simple)
-        echo '<div class="mm-user-info">';
-        echo '<label>' . esc_html__( 'Name', 'markdown-master' ) . '<input type="text" name="mm_user_name" required></label>';
-        echo '<label>' . esc_html__( 'Email', 'markdown-master' ) . '<input type="email" name="mm_user_email" required></label>';
-        echo '<label>' . esc_html__( 'Class', 'markdown-master' ) . '<input type="text" name="mm_user_class"></label>';
-        echo '<label>' . esc_html__( 'Section', 'markdown-master' ) . '<input type="text" name="mm_user_section"></label>';
-        echo '</div>';
-
-        foreach ( $questions as $index => $q ) {
-            $q = $this->quiz->get_question( $q->id ); // ensure options and correct parsed
-            echo '<div class="mm-question" data-question-id="' . esc_attr( $q->id ) . '">';
-            echo '<div class="mm-question-text">' . wp_kses_post( $q->question ) . '</div>';
-            if ( ! empty( $q->image ) ) {
-                echo '<div class="mm-question-image"><img src="' . esc_url( $q->image ) . '" alt=""></div>';
-            }
-
-            if ( $q->type === 'mcq' ) {
-                $answers = $this->quiz->get_answers_by_question( $q->id );
-                if ( ! empty( $answers ) ) {
-                    foreach ( $answers as $a ) {
-                        $input_name = 'q_' . $q->id;
-                        echo '<label class="mm-option">';
-                        echo '<input type="radio" name="' . esc_attr( $input_name ) . '" value="' . esc_attr( $a->id ) . '"> ';
-                        if ( ! empty( $a->answer_image ) ) {
-                            echo '<img src="' . esc_url( $a->answer_image ) . '" alt="" style="max-width:100px;display:block;">';
-                        }
-                        echo wp_kses_post( $a->answer_text );
-                        echo '</label>';
-                    }
-                }
-            } else {
-                // short/survey
-                $input_name = 'q_' . $q->id;
-                echo '<textarea name="' . esc_attr( $input_name ) . '" rows="3"></textarea>';
-            }
-
-            echo '</div>'; // .mm-question
-        }
-
-        echo '<div class="mm-quiz-actions"><button type="submit" class="mm-submit-quiz">' . esc_html__( 'Submit Quiz', 'markdown-master' ) . '</button></div>';
-        echo '</form>';
-        echo '</div>'; // .mm-quiz
-
-        // Provide nonce for AJAX submission
-        wp_nonce_field( 'mm_submit_quiz_' . $quiz_id, 'mm_quiz_nonce' );
-
-        return ob_get_clean();
     }
 
-    /**
-     * Render note by ID: [mm_note id="123"]
-     */
-    public function render_note_shortcode( $atts ) {
-        $atts = shortcode_atts( [ 'id' => 0 ], $atts, 'mm_note' );
-        $id = intval( $atts['id'] );
-        if ( ! $id ) {
-            return '<div class="mm-alert mm-alert-error">Note ID not provided.</div>';
+    // Initialize shortcode class once
+    add_action( 'init', function() {
+        if ( ! isset( $GLOBALS['mm_shortcodes_loaded'] ) ) {
+            $GLOBALS['mm_shortcodes_loaded'] = new MM_Shortcodes();
         }
-        $note = $this->note->get_note( $id );
-        if ( ! $note ) {
-            return '<div class="mm-alert mm-alert-error">Note not found.</div>';
-        }
-
-        // Render markdown
-        require_once MM_INCLUDES . 'class-mm-markdown.php';
-        $md = new MM_Markdown();
-        $html = $md->render_markdown( $note->content );
-
-        return '<div class="mm-note">' . $html . '</div>';
-    }
-
-    /**
-     * Render code snippet by ID: [mm_code id="123"]
-     */
-    public function render_code_shortcode( $atts ) {
-        $atts = shortcode_atts( [ 'id' => 0 ], $atts, 'mm_code' );
-        $id = intval( $atts['id'] );
-        if ( ! $id ) {
-            return '<div class="mm-alert mm-alert-error">Snippet ID not provided.</div>';
-        }
-        $s = $this->snippet->get_snippet( $id );
-        if ( ! $s ) {
-            return '<div class="mm-alert mm-alert-error">Snippet not found.</div>';
-        }
-
-        require_once MM_INCLUDES . 'class-mm-highlighter.php';
-        $hl = new MM_Highlighter();
-        return $hl->render_code( $s->code, $s->language );
-    }
+    } );
 }
-
-// initialize shortcodes
-add_action( 'init', function() {
-    if ( ! class_exists( 'MM_Shortcodes' ) ) {
-        require_once MM_INCLUDES . 'class-mm-shortcodes.php';
-    }
-    // instantiate only once
-    if ( class_exists( 'MM_Shortcodes' ) && ! isset( $GLOBALS['mm_shortcodes_loaded'] ) ) {
-        $GLOBALS['mm_shortcodes_loaded'] = new MM_Shortcodes();
-    }
-} );

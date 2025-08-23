@@ -1,0 +1,9 @@
+/* Basic styling for frontend quiz */
+.mm-quiz-wrap { border:1px solid #e1e1e1; padding:16px; margin-bottom:20px; background:#fff; }
+.mm-quiz-title { margin-top:0; }
+.mm-student-fields p { margin:6px 0; }
+.mm-question { margin:12px 0; padding:8px; border:1px dashed #eee; }
+.mm-question-text { font-weight:600; margin-bottom:6px; }
+.mm-opt { display:block; margin:4px 0; }
+.mm-quiz-actions { margin-top:12px; }
+.mm-quiz-result { margin-top:12px; padding:10px; background:#f8f8f8; border:1px solid #eee; }
