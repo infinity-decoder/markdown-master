@@ -6,125 +6,114 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class MM_Activator {
 
+    /**
+     * Run on plugin activation: create DB tables and default options.
+     */
     public static function activate() {
         global $wpdb;
 
+        // Ensure required WP function
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         $charset_collate = $wpdb->get_charset_collate();
+        $prefix = $wpdb->prefix;
 
-        // Quizzes Table
-        $sql_quizzes = "CREATE TABLE {$wpdb->prefix}mm_quizzes (
+        /*
+         * Tables:
+         *  - {prefix}mm_quizzes
+         *  - {prefix}mm_questions
+         *  - {prefix}mm_attempts
+         *  - {prefix}mm_attempt_answers
+         *
+         * Note: we use DATETIME fields with zero default to avoid compatibility issues
+         * with older MySQL versions that may not support CURRENT_TIMESTAMP defaults.
+         */
+
+        $sql = "
+        CREATE TABLE {$prefix}mm_quizzes (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             title VARCHAR(255) NOT NULL,
-            description TEXT NULL,
-            type VARCHAR(50) NOT NULL, -- mcq, short, survey
-            settings LONGTEXT NULL, -- JSON
-            created_by BIGINT(20) UNSIGNED NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            description LONGTEXT NULL,
+            settings LONGTEXT NULL, /* serialized array: shuffle, time_limit, attempts_allowed, show_answers, etc. */
+            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
             PRIMARY KEY  (id)
-        ) $charset_collate;";
+        ) {$charset_collate};
 
-        // Questions Table
-        $sql_questions = "CREATE TABLE {$wpdb->prefix}mm_quiz_questions (
+        CREATE TABLE {$prefix}mm_questions (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             quiz_id BIGINT(20) UNSIGNED NOT NULL,
-            question TEXT NOT NULL,
-            image VARCHAR(255) NULL,
-            type VARCHAR(50) NOT NULL, -- mcq, short
-            correct_answer LONGTEXT NULL,
-            options LONGTEXT NULL, -- JSON for MCQs
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
+            question_text LONGTEXT NOT NULL,
+            question_type VARCHAR(50) NOT NULL DEFAULT 'mcq', /* mcq, checkbox, text, etc. */
+            options LONGTEXT NULL, /* serialized array of options (if applicable) */
+            correct_answer LONGTEXT NULL, /* serialized scalar or array */
+            points FLOAT NOT NULL DEFAULT 1.0,
+            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY (id),
             KEY quiz_id (quiz_id)
-        ) $charset_collate;";
+        ) {$charset_collate};
 
-        // Answers Table
-        $sql_answers = "CREATE TABLE {$wpdb->prefix}mm_quiz_answers (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            question_id BIGINT(20) UNSIGNED NOT NULL,
-            answer_text TEXT NULL,
-            answer_image VARCHAR(255) NULL,
-            is_correct TINYINT(1) DEFAULT 0,
-            PRIMARY KEY  (id),
-            KEY question_id (question_id)
-        ) $charset_collate;";
-
-        // Attempts Table
-        $sql_attempts = "CREATE TABLE {$wpdb->prefix}mm_quiz_attempts (
+        CREATE TABLE {$prefix}mm_attempts (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             quiz_id BIGINT(20) UNSIGNED NOT NULL,
-            user_id BIGINT(20) UNSIGNED NULL,
-            user_name VARCHAR(255) NULL,
-            user_email VARCHAR(255) NULL,
-            user_class VARCHAR(255) NULL,
-            user_section VARCHAR(255) NULL,
-            score FLOAT DEFAULT 0,
-            started_at DATETIME NULL,
-            completed_at DATETIME NULL,
-            PRIMARY KEY  (id),
+            student_name VARCHAR(191) NULL,
+            student_roll VARCHAR(191) NULL,
+            student_class VARCHAR(191) NULL,
+            student_section VARCHAR(191) NULL,
+            student_school VARCHAR(191) NULL,
+            obtained_marks FLOAT NOT NULL DEFAULT 0,
+            total_marks FLOAT NOT NULL DEFAULT 0,
+            meta LONGTEXT NULL, /* serialized/stored extra student data */
+            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY (id),
             KEY quiz_id (quiz_id)
-        ) $charset_collate;";
+        ) {$charset_collate};
 
-        // Results Table
-        $sql_results = "CREATE TABLE {$wpdb->prefix}mm_quiz_results (
+        CREATE TABLE {$prefix}mm_attempt_answers (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             attempt_id BIGINT(20) UNSIGNED NOT NULL,
             question_id BIGINT(20) UNSIGNED NOT NULL,
-            given_answer TEXT NULL,
-            is_correct TINYINT(1) DEFAULT 0,
-            PRIMARY KEY  (id),
-            KEY attempt_id (attempt_id)
-        ) $charset_collate;";
+            given_answer LONGTEXT NULL, /* serialized or scalar */
+            is_correct TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY (id),
+            KEY attempt_id (attempt_id),
+            KEY question_id (question_id)
+        ) {$charset_collate};
+        ";
 
-        // Notes Table
-        $sql_notes = "CREATE TABLE {$wpdb->prefix}mm_notes (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            title VARCHAR(255) NOT NULL,
-            content LONGTEXT NOT NULL,
-            created_by BIGINT(20) UNSIGNED NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id)
-        ) $charset_collate;";
+        // Run DB Delta to create/update tables
+        dbDelta( $sql );
 
-        // Code Snippets Table
-        $sql_snippets = "CREATE TABLE {$wpdb->prefix}mm_code_snippets (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            title VARCHAR(255) NOT NULL,
-            code LONGTEXT NOT NULL,
-            language VARCHAR(50) NOT NULL,
-            created_by BIGINT(20) UNSIGNED NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id)
-        ) $charset_collate;";
+        // Set / update plugin default options (safely)
+        $default_settings = array(
+            'show_answers'         => 'end',   // 'end' or 'instant' or 'never'
+            'theme'                => 'default',
+            'timer_enabled'        => false,
+            'randomize_questions'  => false,
+            'max_attempts'         => 0,       // 0 => unlimited
+        );
 
-        // Settings Table
-        $sql_settings = "CREATE TABLE {$wpdb->prefix}mm_settings (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            option_name VARCHAR(255) NOT NULL,
-            option_value LONGTEXT NULL,
-            PRIMARY KEY  (id),
-            UNIQUE KEY option_name (option_name)
-        ) $charset_collate;";
+        if ( get_option( 'mm_version' ) === false ) {
+            add_option( 'mm_version', '1.0' );
+        } else {
+            update_option( 'mm_version', '1.0' );
+        }
 
-        // Run all table creations
-        dbDelta($sql_quizzes);
-        dbDelta($sql_questions);
-        dbDelta($sql_answers);
-        dbDelta($sql_attempts);
-        dbDelta($sql_results);
-        dbDelta($sql_notes);
-        dbDelta($sql_snippets);
-        dbDelta($sql_settings);
-
-        // Add default plugin options
-        add_option( 'mm_version', MM_VERSION );
-        add_option( 'mm_settings', json_encode([
-            'show_answers'      => 'end', // or 'instant'
-            'theme'             => 'default',
-            'timer_enabled'     => false,
-            'randomize_questions' => false,
-            'max_attempts'      => 0
-        ]) );
+        if ( get_option( 'mm_settings' ) === false ) {
+            add_option( 'mm_settings', maybe_serialize( $default_settings ) );
+        } else {
+            // migrate existing if needed
+            $existing = get_option( 'mm_settings' );
+            if ( is_serialized( $existing ) ) {
+                $existing = maybe_unserialize( $existing );
+            }
+            if ( ! is_array( $existing ) ) {
+                $existing = (array) $existing;
+            }
+            $merged = array_merge( $default_settings, $existing );
+            update_option( 'mm_settings', maybe_serialize( $merged ) );
+        }
     }
 }
