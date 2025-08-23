@@ -12,7 +12,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - CSV export and per-student PDF export
  *
  * Place this file at: markdown-master/includes/class-mm-admin.php
- * (or markdown-master-master/includes/class-mm-admin.php depending on your plugin folder)
  */
 
 if ( ! class_exists( 'WP_List_Table' ) ) {
@@ -57,7 +56,7 @@ class MM_Admin_Quizzes_Table extends WP_List_Table {
 
     public function prepare_items() {
         global $wpdb;
-        $quiz_table     = $wpdb->prefix . 'mm_quizzes';
+        $quiz_table      = $wpdb->prefix . 'mm_quizzes';
         $questions_table = $wpdb->prefix . 'mm_questions';
         $attempts_table  = $wpdb->prefix . 'mm_attempts';
 
@@ -114,16 +113,16 @@ class MM_Admin_Results_Table extends WP_List_Table {
 
     public function get_columns() {
         return [
-            'cb'            => '<input type="checkbox" />',
-            'student_name'  => __( 'Student Name', 'markdown-master' ),
-            'student_roll'  => __( 'Roll No', 'markdown-master' ),
-            'student_class' => __( 'Class', 'markdown-master' ),
-            'student_section'=> __( 'Section', 'markdown-master' ),
-            'student_school' => __( 'School', 'markdown-master' ),
-            'obtained_marks' => __( 'Obtained Marks', 'markdown-master' ),
-            'total_marks'    => __( 'Total Marks', 'markdown-master' ),
-            'created_at'     => __( 'Date', 'markdown-master' ),
-            'actions'        => __( 'Actions', 'markdown-master' ),
+            'cb'              => '<input type="checkbox" />',
+            'student_name'    => __( 'Student Name', 'markdown-master' ),
+            'student_roll'    => __( 'Roll No', 'markdown-master' ),
+            'student_class'   => __( 'Class', 'markdown-master' ),
+            'student_section' => __( 'Section', 'markdown-master' ),
+            'student_school'  => __( 'School', 'markdown-master' ),
+            'obtained_marks'  => __( 'Obtained Marks', 'markdown-master' ),
+            'total_marks'     => __( 'Total Marks', 'markdown-master' ),
+            'created_at'      => __( 'Date', 'markdown-master' ),
+            'actions'         => __( 'Actions', 'markdown-master' ),
         ];
     }
 
@@ -150,9 +149,10 @@ class MM_Admin_Results_Table extends WP_List_Table {
             case 'created_at':
                 return esc_html( $item->created_at );
             case 'actions':
-                $pdf_url = wp_nonce_url( add_query_arg( [ 'page' => 'mm_results', 'action' => 'pdf', 'attempt_id' => $item->id ], admin_url( 'admin.php' ) ), 'mm_pdf_' . $item->id );
+                $pdf_url  = wp_nonce_url( add_query_arg( [ 'page' => 'mm_results', 'action' => 'pdf', 'attempt_id' => $item->id ], admin_url( 'admin.php' ) ), 'mm_pdf_' . $item->id );
                 $view_url = esc_url( add_query_arg( [ 'page' => 'mm_results', 'action' => 'view', 'attempt_id' => $item->id ], admin_url( 'admin.php' ) ) );
-                return sprintf( '<a href="%s" target="_blank">%s</a> | <a href="%s">%s</a>',
+                return sprintf(
+                    '<a href="%s" target="_blank">%s</a> | <a href="%s">%s</a>',
                     esc_url( $pdf_url ), esc_html__( 'Export PDF', 'markdown-master' ),
                     esc_url( $view_url ), esc_html__( 'View', 'markdown-master' )
                 );
@@ -165,10 +165,9 @@ class MM_Admin_Results_Table extends WP_List_Table {
         global $wpdb;
         $attempts_table = $wpdb->prefix . 'mm_attempts';
 
-        // Pagination
-        $per_page = 20;
+        $per_page     = 20;
         $current_page = $this->get_pagenum();
-        $offset = ( $current_page - 1 ) * $per_page;
+        $offset       = ( $current_page - 1 ) * $per_page;
 
         if ( $this->quiz_id <= 0 ) {
             $this->items = [];
@@ -177,7 +176,14 @@ class MM_Admin_Results_Table extends WP_List_Table {
         }
 
         $total_items = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$attempts_table} WHERE quiz_id = %d", $this->quiz_id ) );
-        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$attempts_table} WHERE quiz_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d", $this->quiz_id, $per_page, $offset ) );
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$attempts_table} WHERE quiz_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                $this->quiz_id,
+                $per_page,
+                $offset
+            )
+        );
 
         $this->items = $rows;
         $this->set_pagination_args( [ 'total_items' => $total_items, 'per_page' => $per_page ] );
@@ -189,15 +195,24 @@ class MM_Admin_Results_Table extends WP_List_Table {
  */
 class MM_Admin {
 
+    /**
+     * Constructor must be light — loader calls ->init_hooks()
+     */
     public function __construct() {
+        // Intentionally empty. Do not hook here — loader calls init_hooks()
+    }
+
+    /**
+     * Required by loader. Register all admin hooks here.
+     */
+    public function init_hooks() {
         add_action( 'admin_menu', [ $this, 'register_menu' ] );
         add_action( 'admin_init', [ $this, 'register_settings' ] );
 
-        // Actions
-        add_action( 'admin_post_mm_save_quiz', [ $this, 'handle_save_quiz' ] );
-        add_action( 'admin_post_mm_delete_quiz', [ $this, 'handle_delete_quiz' ] );
-
-        add_action( 'admin_post_mm_export_results', [ $this, 'handle_export_results' ] );
+        // Admin-post action handlers
+        add_action( 'admin_post_mm_save_quiz',        [ $this, 'handle_save_quiz' ] );
+        add_action( 'admin_post_mm_delete_quiz',      [ $this, 'handle_delete_quiz' ] );
+        add_action( 'admin_post_mm_export_results',   [ $this, 'handle_export_results' ] );
         add_action( 'admin_post_mm_export_attempt_pdf', [ $this, 'handle_export_attempt_pdf' ] );
     }
 
@@ -243,22 +258,27 @@ class MM_Admin {
     public function register_settings() {
         register_setting( 'mm_settings_group', 'mm_settings', [ $this, 'sanitize_settings' ] );
 
-        add_settings_section( 'mm_defaults', __( 'Quiz Defaults', 'markdown-master' ), function(){ echo '<p>' . __( 'Set defaults for new quizzes.', 'markdown-master' ) . '</p>'; }, 'mm_settings' );
+        add_settings_section(
+            'mm_defaults',
+            __( 'Quiz Defaults', 'markdown-master' ),
+            function () { echo '<p>' . __( 'Set defaults for new quizzes.', 'markdown-master' ) . '</p>'; },
+            'mm_settings'
+        );
 
-        add_settings_field( 'mm_default_shuffle', __( 'Shuffle Questions', 'markdown-master' ), [ $this, 'field_default_shuffle' ], 'mm_settings', 'mm_defaults' );
-        add_settings_field( 'mm_default_time_limit', __( 'Default Time Limit (minutes)', 'markdown-master' ), [ $this, 'field_default_time_limit' ], 'mm_settings', 'mm_defaults' );
-        add_settings_field( 'mm_default_attempts', __( 'Default Attempts Allowed', 'markdown-master' ), [ $this, 'field_default_attempts' ], 'mm_settings', 'mm_defaults' );
-        add_settings_field( 'mm_default_show_answers', __( 'Show Answers By Default', 'markdown-master' ), [ $this, 'field_default_show_answers' ], 'mm_settings', 'mm_defaults' );
-        add_settings_field( 'mm_enable_pdf', __( 'Enable PDF Export', 'markdown-master' ), [ $this, 'field_enable_pdf' ], 'mm_settings', 'mm_defaults' );
+        add_settings_field( 'mm_default_shuffle',        __( 'Shuffle Questions', 'markdown-master' ), [ $this, 'field_default_shuffle' ],      'mm_settings', 'mm_defaults' );
+        add_settings_field( 'mm_default_time_limit',     __( 'Default Time Limit (minutes)', 'markdown-master' ), [ $this, 'field_default_time_limit' ], 'mm_settings', 'mm_defaults' );
+        add_settings_field( 'mm_default_attempts',       __( 'Default Attempts Allowed', 'markdown-master' ), [ $this, 'field_default_attempts' ], 'mm_settings', 'mm_defaults' );
+        add_settings_field( 'mm_default_show_answers',   __( 'Show Answers By Default', 'markdown-master' ), [ $this, 'field_default_show_answers' ], 'mm_settings', 'mm_defaults' );
+        add_settings_field( 'mm_enable_pdf',             __( 'Enable PDF Export', 'markdown-master' ), [ $this, 'field_enable_pdf' ],          'mm_settings', 'mm_defaults' );
     }
 
     public function sanitize_settings( $input ) {
         $out = [];
-        $out['shuffle'] = isset( $input['shuffle'] ) ? ( $input['shuffle'] ? 1 : 0 ) : 0;
-        $out['time_limit'] = isset( $input['time_limit'] ) ? intval( $input['time_limit'] ) : 0;
+        $out['shuffle']          = isset( $input['shuffle'] ) ? ( $input['shuffle'] ? 1 : 0 ) : 0;
+        $out['time_limit']       = isset( $input['time_limit'] ) ? intval( $input['time_limit'] ) : 0;
         $out['attempts_allowed'] = isset( $input['attempts_allowed'] ) ? intval( $input['attempts_allowed'] ) : 0;
-        $out['show_answers'] = isset( $input['show_answers'] ) ? sanitize_text_field( $input['show_answers'] ) : 'end';
-        $out['enable_pdf'] = isset( $input['enable_pdf'] ) ? ( $input['enable_pdf'] ? 1 : 0 ) : 0;
+        $out['show_answers']     = isset( $input['show_answers'] ) ? sanitize_text_field( $input['show_answers'] ) : 'end';
+        $out['enable_pdf']       = isset( $input['enable_pdf'] ) ? ( $input['enable_pdf'] ? 1 : 0 ) : 0;
         return $out;
     }
 
@@ -297,7 +317,7 @@ class MM_Admin {
 
     public function get_settings() {
         $opts = get_option( 'mm_settings', array() );
-        if ( is_string( $opts ) && is_serialized( $opts ) ) {
+        if ( is_string( $opts ) && function_exists( 'is_serialized' ) && is_serialized( $opts ) ) {
             $opts = maybe_unserialize( $opts );
         }
         if ( ! is_array( $opts ) ) {
@@ -325,9 +345,8 @@ class MM_Admin {
     }
 
     public function render_quizzes_page() {
-        // Reuse earlier behaviour: show list or edit form
         $action = isset( $_GET['action'] ) ? sanitize_text_field( $_GET['action'] ) : '';
-        $id = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
+        $id     = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
 
         if ( $action === 'edit' && $id ) {
             $this->render_quiz_form( $id );
@@ -337,8 +356,11 @@ class MM_Admin {
             $this->render_quiz_form();
             return;
         }
+        if ( $action === 'export' && $id ) {
+            // Soft redirect to admin-post export if you wire one; otherwise just show notice.
+            echo '<div class="notice notice-info"><p>' . esc_html__( 'Use Import/Export page to export full quiz data.', 'markdown-master' ) . '</p></div>';
+        }
 
-        // list view
         echo '<div class="wrap"><h1>' . esc_html__( 'Quizzes', 'markdown-master' ) . ' <a href="' . esc_url( add_query_arg( [ 'page' => 'mm_quizzes', 'action' => 'new' ], admin_url( 'admin.php' ) ) ) . '" class="page-title-action">' . esc_html__( 'Add New', 'markdown-master' ) . '</a></h1>';
         $table = new MM_Admin_Quizzes_Table();
         $table->prepare_items();
@@ -354,23 +376,40 @@ class MM_Admin {
         $quiz_table = $wpdb->prefix . 'mm_quizzes';
 
         $quiz = [
-            'id' => 0,
-            'title' => '',
-            'description' => '',
-            'settings' => maybe_serialize( [] ),
-            'shuffle' => 0,
-            'time_limit' => 0,
+            'id'               => 0,
+            'title'            => '',
+            'description'      => '',
+            'settings'         => maybe_serialize( [] ),
+            // Legacy columns support (if present in schema)
+            'shuffle'          => 0,
+            'time_limit'       => 0,
             'attempts_allowed' => 0,
-            'show_answers' => 0,
+            'show_answers'     => 0,
         ];
+
         if ( $id > 0 ) {
             $q = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$quiz_table} WHERE id = %d", $id ), ARRAY_A );
             if ( $q ) {
-                $quiz = $q;
+                $quiz = array_merge( $quiz, $q );
             }
         }
 
-        // Display form
+        // Merge serialized settings into surface fields for editing
+        $settings = [];
+        if ( isset( $quiz['settings'] ) ) {
+            $maybe = is_string( $quiz['settings'] ) ? maybe_unserialize( $quiz['settings'] ) : $quiz['settings'];
+            if ( is_string( $maybe ) ) {
+                $maybe = json_decode( $maybe, true );
+            }
+            if ( is_array( $maybe ) ) {
+                $settings = $maybe;
+            }
+        }
+        $quiz['shuffle']          = isset( $settings['shuffle'] ) ? (int) $settings['shuffle'] : (int) $quiz['shuffle'];
+        $quiz['time_limit']       = isset( $settings['time_limit'] ) ? (int) $settings['time_limit'] : (int) $quiz['time_limit'];
+        $quiz['attempts_allowed'] = isset( $settings['attempts_allowed'] ) ? (int) $settings['attempts_allowed'] : (int) $quiz['attempts_allowed'];
+        $quiz['show_answers']     = isset( $settings['show_answers'] ) ? (int) $settings['show_answers'] : (int) $quiz['show_answers'];
+
         ?>
         <div class="wrap">
             <h1><?php echo $id ? esc_html__( 'Edit Quiz', 'markdown-master' ) : esc_html__( 'Create New Quiz', 'markdown-master' ); ?></h1>
@@ -414,7 +453,6 @@ class MM_Admin {
 
             <h2><?php esc_html_e( 'Questions', 'markdown-master' ); ?></h2>
             <p class="description"><?php esc_html_e( 'Question manager will be available in next steps: add, edit, import/export questions.', 'markdown-master' ); ?></p>
-            <!-- Placeholder: link to future question manager -->
         </div>
         <?php
     }
@@ -426,7 +464,6 @@ class MM_Admin {
         global $wpdb;
         $quiz_table = $wpdb->prefix . 'mm_quizzes';
 
-        // Handle messages
         if ( isset( $_GET['mm_msg'] ) ) {
             $msg = sanitize_text_field( $_GET['mm_msg'] );
             echo '<div class="notice notice-success"><p>' . esc_html( $msg ) . '</p></div>';
@@ -441,11 +478,13 @@ class MM_Admin {
                 <select id="filter_quiz" name="quiz_id">
                     <option value="0"><?php esc_html_e( '-- Select Quiz --', 'markdown-master' ); ?></option>
                     <?php
+                    $current_q = isset( $_GET['quiz_id'] ) ? intval( $_GET['quiz_id'] ) : 0;
                     $quizzes = $wpdb->get_results( "SELECT id, title FROM {$quiz_table} ORDER BY id DESC" );
                     foreach ( $quizzes as $q ) {
-                        printf( '<option value="%1$d"%2$s>%3$s</option>',
+                        printf(
+                            '<option value="%1$d"%2$s>%3$s</option>',
                             intval( $q->id ),
-                            selected( intval( $_GET['quiz_id'] ?? 0 ), intval( $q->id ), false ),
+                            selected( $current_q, intval( $q->id ), false ),
                             esc_html( $q->title )
                         );
                     }
@@ -454,11 +493,7 @@ class MM_Admin {
 
                 <input type="submit" class="button" value="<?php esc_attr_e( 'Filter', 'markdown-master' ); ?>">
                 <?php if ( isset( $_GET['quiz_id'] ) && intval( $_GET['quiz_id'] ) > 0 ) : ?>
-                    <?php
-                    // Export CSV form (use POST to admin_post handler)
-                    $export_nonce = wp_create_nonce( 'mm_export_results' );
-                    ?>
-                    <form method="post" style="display:inline;">
+                    <form method="post" style="display:inline;" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                         <input type="hidden" name="action" value="mm_export_results">
                         <input type="hidden" name="quiz_id" value="<?php echo esc_attr( intval( $_GET['quiz_id'] ) ); ?>">
                         <?php wp_nonce_field( 'mm_export_results', 'mm_export_results_nonce' ); ?>
@@ -470,7 +505,6 @@ class MM_Admin {
             <?php
             $quiz_id = isset( $_GET['quiz_id'] ) ? intval( $_GET['quiz_id'] ) : 0;
             if ( $quiz_id > 0 ) {
-                // Instantiate results table
                 $table = new MM_Admin_Results_Table( $quiz_id );
                 $table->prepare_items();
                 $table->display();
@@ -510,37 +544,47 @@ class MM_Admin {
         global $wpdb;
         $quiz_table = $wpdb->prefix . 'mm_quizzes';
 
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
-        $title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
-        $description = isset( $_POST['description'] ) ? wp_kses_post( wp_unslash( $_POST['description'] ) ) : '';
-        $shuffle = isset( $_POST['shuffle'] ) ? 1 : 0;
-        $time_limit = isset( $_POST['time_limit'] ) ? intval( $_POST['time_limit'] ) : 0;
+        $id               = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+        $title            = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+        $description      = isset( $_POST['description'] ) ? wp_kses_post( wp_unslash( $_POST['description'] ) ) : '';
+        $shuffle          = isset( $_POST['shuffle'] ) ? 1 : 0;
+        $time_limit       = isset( $_POST['time_limit'] ) ? intval( $_POST['time_limit'] ) : 0;
         $attempts_allowed = isset( $_POST['attempts_allowed'] ) ? intval( $_POST['attempts_allowed'] ) : 0;
-        $show_answers = isset( $_POST['show_answers'] ) ? 1 : 0;
+        $show_answers     = isset( $_POST['show_answers'] ) ? 1 : 0;
 
-        // Store settings as serialized array for extensibility
+        // Store (and keep backward compatible with existing "settings" usage)
         $settings = maybe_serialize( [
-            'shuffle' => $shuffle,
-            'time_limit' => $time_limit,
+            'shuffle'          => $shuffle,
+            'time_limit'       => $time_limit,
             'attempts_allowed' => $attempts_allowed,
-            'show_answers' => $show_answers,
+            'show_answers'     => $show_answers,
         ] );
 
         if ( $id > 0 ) {
-            $wpdb->update( $quiz_table, [
-                'title' => $title,
-                'description' => $description,
-                'settings' => $settings,
-                'updated_at' => current_time( 'mysql' ),
-            ], [ 'id' => $id ], [ '%s', '%s', '%s', '%s' ], [ '%d' ] );
+            $wpdb->update(
+                $quiz_table,
+                [
+                    'title'       => $title,
+                    'description' => $description,
+                    'settings'    => $settings,
+                    'updated_at'  => current_time( 'mysql' ),
+                ],
+                [ 'id' => $id ],
+                [ '%s', '%s', '%s', '%s' ],
+                [ '%d' ]
+            );
         } else {
-            $wpdb->insert( $quiz_table, [
-                'title' => $title,
-                'description' => $description,
-                'settings' => $settings,
-                'created_at' => current_time( 'mysql' ),
-                'updated_at' => current_time( 'mysql' ),
-            ], [ '%s', '%s', '%s', '%s', '%s' ] );
+            $wpdb->insert(
+                $quiz_table,
+                [
+                    'title'       => $title,
+                    'description' => $description,
+                    'settings'    => $settings,
+                    'created_at'  => current_time( 'mysql' ),
+                    'updated_at'  => current_time( 'mysql' ),
+                ],
+                [ '%s', '%s', '%s', '%s', '%s' ]
+            );
         }
 
         wp_safe_redirect( admin_url( 'admin.php?page=mm_quizzes&mm_msg=' . urlencode( __( 'Quiz saved.', 'markdown-master' ) ) ) );
@@ -560,14 +604,12 @@ class MM_Admin {
             wp_die( __( 'Nonce verification failed.', 'markdown-master' ) );
         }
 
-        // Delete quiz using MM_Quiz model if present, otherwise direct DB removal
         if ( class_exists( 'MM_Quiz' ) ) {
             $model = new MM_Quiz();
             $model->delete_quiz( $id );
         } else {
             global $wpdb;
             $wpdb->delete( $wpdb->prefix . 'mm_quizzes', [ 'id' => $id ], [ '%d' ] );
-            // delete questions, attempts, answers
             $wpdb->delete( $wpdb->prefix . 'mm_questions', [ 'quiz_id' => $id ], [ '%d' ] );
             $attempts = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}mm_attempts WHERE quiz_id = %d", $id ) );
             if ( $attempts ) {
@@ -583,8 +625,7 @@ class MM_Admin {
     }
 
     /**
-     * Export CSV of attempts for a quiz (admin_post handler)
-     * Expects POST: action=mm_export_results, quiz_id, nonce mm_export_results_nonce
+     * Export CSV of attempts for a quiz
      */
     public function handle_export_results() {
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -598,35 +639,31 @@ class MM_Admin {
             exit;
         }
 
-        // Use MM_Quiz model if available else direct DB
         if ( class_exists( 'MM_Quiz' ) ) {
-            $model = new MM_Quiz();
+            $model   = new MM_Quiz();
             $results = $model->get_attempts_by_quiz( $quiz_id, -1, 0 ); // all
         } else {
             global $wpdb;
             $results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}mm_attempts WHERE quiz_id = %d ORDER BY created_at DESC", $quiz_id ) );
         }
 
-        // Stream CSV
         $filename = 'mm_results_quiz_' . $quiz_id . '_' . date( 'Y-m-d_H-i-s' ) . '.csv';
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename=' . $filename );
 
         $output = fopen( 'php://output', 'w' );
-        // Header row
         fputcsv( $output, [ 'Student Name', 'Roll No', 'Class', 'Section', 'School', 'Obtained Marks', 'Total Marks', 'Date' ] );
 
         if ( $results ) {
             foreach ( $results as $r ) {
-                // $r may be object or array
-                $name = isset( $r->student_name ) ? $r->student_name : ( isset( $r['student_name'] ) ? $r['student_name'] : '' );
-                $roll = isset( $r->student_roll ) ? $r->student_roll : ( isset( $r['student_roll'] ) ? $r['student_roll'] : '' );
-                $class = isset( $r->student_class ) ? $r->student_class : ( isset( $r['student_class'] ) ? $r['student_class'] : '' );
-                $section = isset( $r->student_section ) ? $r->student_section : ( isset( $r['student_section'] ) ? $r['student_section'] : '' );
+                $name   = isset( $r->student_name ) ? $r->student_name : ( isset( $r['student_name'] ) ? $r['student_name'] : '' );
+                $roll   = isset( $r->student_roll ) ? $r->student_roll : ( isset( $r['student_roll'] ) ? $r['student_roll'] : '' );
+                $class  = isset( $r->student_class ) ? $r->student_class : ( isset( $r['student_class'] ) ? $r['student_class'] : '' );
+                $section= isset( $r->student_section ) ? $r->student_section : ( isset( $r['student_section'] ) ? $r['student_section'] : '' );
                 $school = isset( $r->student_school ) ? $r->student_school : ( isset( $r['student_school'] ) ? $r['student_school'] : '' );
-                $obt = isset( $r->obtained_marks ) ? $r->obtained_marks : ( isset( $r['obtained_marks'] ) ? $r['obtained_marks'] : 0 );
-                $total = isset( $r->total_marks ) ? $r->total_marks : ( isset( $r['total_marks'] ) ? $r['total_marks'] : 0 );
-                $date = isset( $r->created_at ) ? $r->created_at : ( isset( $r['created_at'] ) ? $r['created_at'] : '' );
+                $obt    = isset( $r->obtained_marks ) ? $r->obtained_marks : ( isset( $r['obtained_marks'] ) ? $r['obtained_marks'] : 0 );
+                $total  = isset( $r->total_marks ) ? $r->total_marks : ( isset( $r['total_marks'] ) ? $r['total_marks'] : 0 );
+                $date   = isset( $r->created_at ) ? $r->created_at : ( isset( $r['created_at'] ) ? $r['created_at'] : '' );
                 fputcsv( $output, [ $name, $roll, $class, $section, $school, $obt, $total, $date ] );
             }
         }
@@ -636,8 +673,7 @@ class MM_Admin {
     }
 
     /**
-     * Export a single attempt to PDF (admin_post handler)
-     * Expects GET with nonce or POST depending on link
+     * Export a single attempt to PDF (admin-only)
      */
     public function handle_export_attempt_pdf() {
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -649,25 +685,22 @@ class MM_Admin {
             exit;
         }
 
-        // Check nonce if present
         $nonce_check = $_REQUEST['_wpnonce'] ?? '';
         if ( empty( $nonce_check ) || ! wp_verify_nonce( $nonce_check, 'mm_pdf_' . $attempt_id ) ) {
             wp_die( __( 'Nonce check failed.', 'markdown-master' ) );
         }
 
-        // Use MM_Quiz model to fetch attempt and quiz
         if ( ! class_exists( 'MM_Quiz' ) ) {
-            $model_file = dirname( __DIR__ ) . '/includes/class-mm-quiz.php';
+            $model_file = dirname( __FILE__ ) . '/class-mm-quiz.php';
             if ( file_exists( $model_file ) ) {
                 require_once $model_file;
             }
         }
-
         if ( ! class_exists( 'MM_Quiz' ) ) {
             wp_die( __( 'Quiz model not found.', 'markdown-master' ) );
         }
 
-        $model = new MM_Quiz();
+        $model   = new MM_Quiz();
         $attempt = $model->get_attempt( $attempt_id );
         if ( ! $attempt ) {
             wp_die( __( 'Attempt not found.', 'markdown-master' ) );
@@ -678,7 +711,6 @@ class MM_Admin {
             wp_die( __( 'Quiz not found.', 'markdown-master' ) );
         }
 
-        // Try to use Dompdf if available
         $autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
         if ( ! file_exists( $autoload ) ) {
             wp_die( __( 'Dompdf (vendor) is not installed. Install dompdf via composer to enable PDF export.', 'markdown-master' ) );
@@ -688,7 +720,6 @@ class MM_Admin {
             wp_die( __( 'Dompdf class not found. Ensure dompdf is installed correctly.', 'markdown-master' ) );
         }
 
-        // Build HTML
         ob_start();
         ?>
         <html><head><meta charset="utf-8"><title><?php echo esc_html( $quiz['title'] ); ?></title></head><body>
@@ -700,10 +731,10 @@ class MM_Admin {
         <?php
         $answers = $attempt['answers'];
         foreach ( $quiz['questions'] as $q ) {
-            $qid = intval( $q['id'] );
-            $qtext = wp_strip_all_tags( $q['question_text'] );
+            $qid     = intval( $q['id'] );
+            $qtext   = wp_strip_all_tags( $q['question_text'] );
             $correct = maybe_unserialize( $q['correct_answer'] );
-            $given = isset( $answers[ $qid ] ) ? $answers[ $qid ] : null;
+            $given   = isset( $answers[ $qid ] ) ? $answers[ $qid ] : null;
             echo '<div style="margin-bottom:10px;">';
             echo '<div><strong>' . esc_html( $qtext ) . '</strong></div>';
             echo '<div>' . esc_html__( 'Student Answer:', 'markdown-master' ) . ' ' . ( is_array( $given ) ? esc_html( implode( ', ', (array) $given ) ) : esc_html( (string) $given ) ) . '</div>';
@@ -715,7 +746,6 @@ class MM_Admin {
         <?php
         $html = ob_get_clean();
 
-        // Generate PDF with Dompdf
         try {
             $dompdf = new \Dompdf\Dompdf();
             $dompdf->loadHtml( $html );
@@ -723,15 +753,15 @@ class MM_Admin {
             $dompdf->render();
             $output = $dompdf->output();
 
-            // send headers and output
             header( 'Content-Type: application/pdf' );
             header( 'Content-Disposition: attachment; filename="mm_attempt_' . $attempt_id . '.pdf"' );
             echo $output;
             exit;
-        } catch ( Exception $e ) {
+        } catch ( \Exception $e ) {
             wp_die( __( 'PDF generation failed: ', 'markdown-master' ) . $e->getMessage() );
         }
     }
 }
 
+// Important: instantiate admin (loader expects init_hooks())
 new MM_Admin();
