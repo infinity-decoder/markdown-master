@@ -1,19 +1,13 @@
 <?php
-// Exit if accessed directly
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 /**
- * Markdown Master - DB Model
- * Provides CRUD for quizzes, questions, attempts and simple scoring.
- *
- * Storage format:
- *  - options (question options): JSON string (array of strings)
- *  - correct_answer: JSON string (scalar or array)
- *  - answers (attempt): JSON object { question_id: scalar|array }
- *
- * All methods avoid echo/print and use $wpdb->prepare().
+ * Data/model layer for quizzes, questions and attempts.
+ * - All methods avoid echo/print; no output is produced here.
+ * - JSON is used for complex fields. We auto-detect JSON vs serialized when reading.
  */
 class MM_Quiz {
 
@@ -29,7 +23,6 @@ class MM_Quiz {
     public function __construct() {
         global $wpdb;
         $this->db = $wpdb;
-
         $this->table_quizzes         = $wpdb->prefix . 'mm_quizzes';
         $this->table_questions       = $wpdb->prefix . 'mm_questions';
         $this->table_attempts        = $wpdb->prefix . 'mm_attempts';
@@ -37,132 +30,203 @@ class MM_Quiz {
     }
 
     /* =========================
-     * QUIZZES
-     * ======================= */
+     * Helpers
+     * ========================= */
 
-    public function create_quiz( array $data ) {
-        $now = current_time( 'mysql' );
-
-        $defaults = [
-            'title'            => '',
-            'description'      => '',
-            'settings'         => [],
-            'shuffle'          => 0,
-            'time_limit'       => 0,
-            'attempts_allowed' => 0,
-            'show_answers'     => 0,
-        ];
-        $data = wp_parse_args( $data, $defaults );
-
-        $insert = [
-            'title'            => sanitize_text_field( $data['title'] ),
-            'description'      => wp_kses_post( $data['description'] ),
-            'settings'         => wp_json_encode( is_array( $data['settings'] ) ? $data['settings'] : [] ),
-            'shuffle'          => (int) ! empty( $data['shuffle'] ),
-            'time_limit'       => (int) $data['time_limit'],
-            'attempts_allowed' => (int) $data['attempts_allowed'],
-            'show_answers'     => (int) ! empty( $data['show_answers'] ),
-            'created_at'       => $now,
-            'updated_at'       => $now,
-        ];
-
-        $ok = $this->db->insert(
-            $this->table_quizzes,
-            $insert,
-            [ '%s','%s','%s','%d','%d','%d','%d','%s','%s' ]
-        );
-
-        return $ok ? (int) $this->db->insert_id : 0;
+    protected function now() {
+        return current_time( 'mysql' );
     }
 
-    public function update_quiz( int $id, array $data ) {
-        if ( $id <= 0 ) return false;
+    protected function normalize_bool( $v ) {
+        return (int) ( ! empty( $v ) );
+    }
 
-        $now = current_time( 'mysql' );
+    protected function encode_data( $data ) {
+        if ( is_string( $data ) ) {
+            return $data;
+        }
+        return wp_json_encode( $data, JSON_UNESCAPED_UNICODE );
+    }
 
-        $fields = [];
-        $formats = [];
-
-        if ( isset( $data['title'] ) ) {
-            $fields['title'] = sanitize_text_field( $data['title'] );
-            $formats[] = '%s';
+    protected function decode_data( $data ) {
+        if ( is_array( $data ) || is_object( $data ) ) {
+            return $data;
         }
-        if ( isset( $data['description'] ) ) {
-            $fields['description'] = wp_kses_post( $data['description'] );
-            $formats[] = '%s';
-        }
-        if ( isset( $data['settings'] ) ) {
-            $fields['settings'] = wp_json_encode( is_array( $data['settings'] ) ? $data['settings'] : [] );
-            $formats[] = '%s';
-        }
-        foreach ( [ 'shuffle','time_limit','attempts_allowed','show_answers' ] as $k ) {
-            if ( isset( $data[ $k ] ) ) {
-                $fields[ $k ] = (int) $data[ $k ];
-                $formats[] = '%d';
+        if ( is_string( $data ) ) {
+            $json = json_decode( $data, true );
+            if ( json_last_error() === JSON_ERROR_NONE ) {
+                return $json;
+            }
+            // Fallback for legacy serialized values.
+            if ( is_serialized( $data ) ) {
+                $maybe = @maybe_unserialize( $data );
+                if ( is_array( $maybe ) || is_object( $maybe ) ) {
+                    return $maybe;
+                }
             }
         }
+        return $data;
+    }
 
-        $fields['updated_at'] = $now;
+    protected function clean_question_type( $type ) {
+        $type = strtolower( sanitize_text_field( (string) $type ) );
+        $allowed = array( 'single', 'multiple', 'text', 'textarea' );
+        return in_array( $type, $allowed, true ) ? $type : 'single';
+    }
+
+    /* =========================
+     * Quizzes
+     * ========================= */
+
+    /**
+     * Create a quiz. Returns new quiz ID or 0 on failure.
+     */
+    public function create_quiz( array $data ) {
+        $title            = isset( $data['title'] ) ? sanitize_text_field( $data['title'] ) : '';
+        $description      = isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '';
+        $settings         = isset( $data['settings'] ) ? $this->encode_data( $data['settings'] ) : $this->encode_data( array() );
+        $shuffle          = isset( $data['shuffle'] ) ? $this->normalize_bool( $data['shuffle'] ) : 0;
+        $time_limit       = isset( $data['time_limit'] ) ? intval( $data['time_limit'] ) : 0;
+        $attempts_allowed = isset( $data['attempts_allowed'] ) ? intval( $data['attempts_allowed'] ) : 0;
+        $show_answers     = isset( $data['show_answers'] ) ? $this->normalize_bool( $data['show_answers'] ) : 0;
+
+        $inserted = $this->db->insert(
+            $this->table_quizzes,
+            array(
+                'title'            => $title,
+                'description'      => $description,
+                'settings'         => $settings,
+                'shuffle'          => $shuffle,
+                'time_limit'       => $time_limit,
+                'attempts_allowed' => $attempts_allowed,
+                'show_answers'     => $show_answers,
+                'created_at'       => $this->now(),
+                'updated_at'       => $this->now(),
+            ),
+            array( '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s' )
+        );
+
+        if ( ! $inserted ) {
+            return 0;
+        }
+        return (int) $this->db->insert_id;
+    }
+
+    /**
+     * Update a quiz. Returns true/false.
+     */
+    public function update_quiz( $id, array $data ) {
+        $id = (int) $id;
+        if ( $id <= 0 ) {
+            return false;
+        }
+
+        $fields = array();
+        $formats = array();
+
+        if ( array_key_exists( 'title', $data ) ) {
+            $fields['title'] = sanitize_text_field( (string) $data['title'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'description', $data ) ) {
+            $fields['description'] = wp_kses_post( (string) $data['description'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'settings', $data ) ) {
+            $fields['settings'] = $this->encode_data( $data['settings'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'shuffle', $data ) ) {
+            $fields['shuffle'] = $this->normalize_bool( $data['shuffle'] );
+            $formats[] = '%d';
+        }
+        if ( array_key_exists( 'time_limit', $data ) ) {
+            $fields['time_limit'] = intval( $data['time_limit'] );
+            $formats[] = '%d';
+        }
+        if ( array_key_exists( 'attempts_allowed', $data ) ) {
+            $fields['attempts_allowed'] = intval( $data['attempts_allowed'] );
+            $formats[] = '%d';
+        }
+        if ( array_key_exists( 'show_answers', $data ) ) {
+            $fields['show_answers'] = $this->normalize_bool( $data['show_answers'] );
+            $formats[] = '%d';
+        }
+
+        $fields['updated_at'] = $this->now();
         $formats[] = '%s';
 
-        if ( empty( $fields ) ) return false;
+        if ( empty( $fields ) ) {
+            return false;
+        }
 
-        return false !== $this->db->update(
+        $updated = $this->db->update(
             $this->table_quizzes,
             $fields,
-            [ 'id' => $id ],
+            array( 'id' => $id ),
             $formats,
-            [ '%d' ]
+            array( '%d' )
         );
+
+        return $updated !== false;
     }
 
-    public function delete_quiz( int $id ) {
-        if ( $id <= 0 ) return false;
+    /**
+     * Delete a quiz and all related data (questions, attempts, attempt_answers).
+     */
+    public function delete_quiz( $id ) {
+        $id = (int) $id;
+        if ( $id <= 0 ) {
+            return false;
+        }
+
+        // Delete per-question answers for attempts of this quiz.
+        $attempt_ids = $this->db->get_col(
+            $this->db->prepare(
+                "SELECT id FROM {$this->table_attempts} WHERE quiz_id = %d",
+                $id
+            )
+        );
+        if ( ! empty( $attempt_ids ) ) {
+            $in = implode( ',', array_map( 'absint', $attempt_ids ) );
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $this->db->query( "DELETE FROM {$this->table_attempt_answers} WHERE attempt_id IN ({$in})" );
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $this->db->query( "DELETE FROM {$this->table_attempts} WHERE id IN ({$in})" );
+        }
 
         // Delete questions
-        $qs = $this->db->get_col( $this->db->prepare(
-            "SELECT id FROM {$this->table_questions} WHERE quiz_id = %d",
-            $id
-        ) );
-        if ( $qs ) {
-            foreach ( $qs as $qid ) {
-                $this->delete_question( (int) $qid, false ); // silent
-            }
-        }
+        $this->db->delete( $this->table_questions, array( 'quiz_id' => $id ), array( '%d' ) );
 
-        // Delete attempts and their answers
-        $attempts = $this->db->get_col( $this->db->prepare(
-            "SELECT id FROM {$this->table_attempts} WHERE quiz_id = %d",
-            $id
-        ) );
-        if ( $attempts ) {
-            foreach ( $attempts as $aid ) {
-                $this->db->delete( $this->table_attempt_answers, [ 'attempt_id' => (int) $aid ], [ '%d' ] );
-            }
-            $this->db->query( $this->db->prepare(
-                "DELETE FROM {$this->table_attempts} WHERE quiz_id = %d",
-                $id
-            ) );
-        }
+        // Finally delete quiz
+        $this->db->delete( $this->table_quizzes, array( 'id' => $id ), array( '%d' ) );
 
-        // Finally delete the quiz
-        return false !== $this->db->delete( $this->table_quizzes, [ 'id' => $id ], [ '%d' ] );
+        return true;
     }
 
-    public function get_quiz( int $id, bool $with_questions = false ) {
-        if ( $id <= 0 ) return null;
+    /**
+     * Fetch a quiz (optionally with its questions).
+     * Returns associative array or null.
+     */
+    public function get_quiz( $id, $with_questions = false ) {
+        $id = (int) $id;
+        if ( $id <= 0 ) {
+            return null;
+        }
 
-        $row = $this->db->get_row( $this->db->prepare(
-            "SELECT * FROM {$this->table_quizzes} WHERE id = %d",
-            $id
-        ), ARRAY_A );
+        $row = $this->db->get_row(
+            $this->db->prepare(
+                "SELECT * FROM {$this->table_quizzes} WHERE id = %d",
+                $id
+            ),
+            ARRAY_A
+        );
 
         if ( ! $row ) {
             return null;
         }
 
-        // decode settings if JSON
-        $row['settings'] = $this->maybe_decode( $row['settings'] );
+        $row['settings'] = $this->decode_data( $row['settings'] );
 
         if ( $with_questions ) {
             $row['questions'] = $this->get_questions( $id );
@@ -171,359 +235,361 @@ class MM_Quiz {
         return $row;
     }
 
-    public function get_quizzes( int $limit = 50, int $offset = 0 ) {
-        $limit  = max( 1, $limit );
-        $offset = max( 0, $offset );
-        $rows = $this->db->get_results( $this->db->prepare(
-            "SELECT * FROM {$this->table_quizzes} ORDER BY id DESC LIMIT %d OFFSET %d",
-            $limit, $offset
-        ), ARRAY_A );
-
-        if ( ! $rows ) return [];
+    /**
+     * Get questions for a quiz (array of associative arrays).
+     */
+    public function get_questions( $quiz_id ) {
+        $quiz_id = (int) $quiz_id;
+        if ( $quiz_id <= 0 ) {
+            return array();
+        }
+        $rows = $this->db->get_results(
+            $this->db->prepare(
+                "SELECT * FROM {$this->table_questions} WHERE quiz_id = %d ORDER BY id ASC",
+                $quiz_id
+            ),
+            ARRAY_A
+        ) ?: array();
 
         foreach ( $rows as &$r ) {
-            $r['settings'] = $this->maybe_decode( $r['settings'] );
+            $r['options']        = $this->decode_data( $r['options'] );
+            $r['correct_answer'] = $this->decode_data( $r['correct_answer'] );
+            $r['type']           = $this->clean_question_type( $r['type'] );
+            $r['points']         = (int) $r['points'];
         }
+        unset( $r );
+
         return $rows;
     }
 
     /* =========================
-     * QUESTIONS
-     * ======================= */
+     * Questions
+     * ========================= */
 
-    public function add_question( int $quiz_id, array $data ) {
-        if ( $quiz_id <= 0 ) return 0;
+    /**
+     * Add a question to a quiz. Returns new question ID or 0.
+     */
+    public function add_question( $quiz_id, array $q ) {
+        $quiz_id = (int) $quiz_id;
+        if ( $quiz_id <= 0 ) {
+            return 0;
+        }
 
-        $now = current_time( 'mysql' );
-
-        $defaults = [
-            'question_text'  => '',
-            'type'           => 'single', // single|multiple|text|textarea
-            'options'        => [],       // array of strings for single/multiple
-            'correct_answer' => null,     // scalar or array
-            'points'         => 1.0,
-            'image'          => null,
-        ];
-        $data = wp_parse_args( $data, $defaults );
-
-        $insert = [
-            'quiz_id'        => (int) $quiz_id,
-            'question_text'  => wp_kses_post( $data['question_text'] ),
-            'type'           => sanitize_key( $data['type'] ),
-            'options'        => wp_json_encode( is_array( $data['options'] ) ? array_values( array_map( 'wp_kses_post', $data['options'] ) ) : [] ),
-            'correct_answer' => wp_json_encode( $data['correct_answer'] ),
-            'points'         => floatval( $data['points'] ),
-            'image'          => $data['image'] ? esc_url_raw( $data['image'] ) : null,
-            'created_at'     => $now,
-            'updated_at'     => $now,
-        ];
+        $question_text  = isset( $q['question_text'] ) ? wp_kses_post( $q['question_text'] ) : '';
+        $type           = isset( $q['type'] ) ? $this->clean_question_type( $q['type'] ) : 'single';
+        $options        = isset( $q['options'] ) ? $this->encode_data( $q['options'] ) : $this->encode_data( array() );
+        $correct_answer = isset( $q['correct_answer'] ) ? $this->encode_data( $q['correct_answer'] ) : $this->encode_data( null );
+        $points         = isset( $q['points'] ) ? intval( $q['points'] ) : 1;
+        $image          = isset( $q['image'] ) ? sanitize_text_field( $q['image'] ) : null;
 
         $ok = $this->db->insert(
             $this->table_questions,
-            $insert,
-            [ '%d','%s','%s','%s','%s','%f','%s','%s','%s' ]
+            array(
+                'quiz_id'        => $quiz_id,
+                'question_text'  => $question_text,
+                'type'           => $type,
+                'options'        => $options,
+                'correct_answer' => $correct_answer,
+                'points'         => $points,
+                'image'          => $image,
+                'created_at'     => $this->now(),
+            ),
+            array( '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s' )
         );
 
-        return $ok ? (int) $this->db->insert_id : 0;
+        if ( ! $ok ) {
+            return 0;
+        }
+        return (int) $this->db->insert_id;
     }
 
-    public function update_question( int $question_id, array $data ) {
-        if ( $question_id <= 0 ) return false;
-
-        $now    = current_time( 'mysql' );
-        $fields = [];
-        $fmts   = [];
-
-        if ( isset( $data['question_text'] ) ) {
-            $fields['question_text'] = wp_kses_post( $data['question_text'] );
-            $fmts[] = '%s';
-        }
-        if ( isset( $data['type'] ) ) {
-            $fields['type'] = sanitize_key( $data['type'] );
-            $fmts[] = '%s';
-        }
-        if ( array_key_exists( 'options', $data ) ) {
-            $fields['options'] = wp_json_encode( is_array( $data['options'] ) ? array_values( array_map( 'wp_kses_post', $data['options'] ) ) : [] );
-            $fmts[] = '%s';
-        }
-        if ( array_key_exists( 'correct_answer', $data ) ) {
-            $fields['correct_answer'] = wp_json_encode( $data['correct_answer'] );
-            $fmts[] = '%s';
-        }
-        if ( isset( $data['points'] ) ) {
-            $fields['points'] = floatval( $data['points'] );
-            $fmts[] = '%f';
-        }
-        if ( array_key_exists( 'image', $data ) ) {
-            $fields['image'] = $data['image'] ? esc_url_raw( $data['image'] ) : null;
-            $fmts[] = '%s';
+    /**
+     * Update a question. Returns true/false.
+     */
+    public function update_question( $question_id, array $q ) {
+        $question_id = (int) $question_id;
+        if ( $question_id <= 0 ) {
+            return false;
         }
 
-        $fields['updated_at'] = $now; $fmts[] = '%s';
+        $fields  = array();
+        $formats = array();
 
-        if ( empty( $fields ) ) return false;
+        if ( array_key_exists( 'question_text', $q ) ) {
+            $fields['question_text'] = wp_kses_post( (string) $q['question_text'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'type', $q ) ) {
+            $fields['type'] = $this->clean_question_type( $q['type'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'options', $q ) ) {
+            $fields['options'] = $this->encode_data( $q['options'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'correct_answer', $q ) ) {
+            $fields['correct_answer'] = $this->encode_data( $q['correct_answer'] );
+            $formats[] = '%s';
+        }
+        if ( array_key_exists( 'points', $q ) ) {
+            $fields['points'] = intval( $q['points'] );
+            $formats[] = '%d';
+        }
+        if ( array_key_exists( 'image', $q ) ) {
+            $fields['image'] = sanitize_text_field( (string) $q['image'] );
+            $formats[] = '%s';
+        }
 
-        return false !== $this->db->update(
+        if ( empty( $fields ) ) {
+            return false;
+        }
+
+        $updated = $this->db->update(
             $this->table_questions,
             $fields,
-            [ 'id' => $question_id ],
-            $fmts,
-            [ '%d' ]
+            array( 'id' => $question_id ),
+            $formats,
+            array( '%d' )
         );
+
+        return $updated !== false;
     }
 
-    public function delete_question( int $question_id, bool $delete_attempt_rows = true ) {
-        if ( $question_id <= 0 ) return false;
-
-        if ( $delete_attempt_rows ) {
-            // Optional: clear per-question attempt rows (if used)
-            $this->db->delete( $this->table_attempt_answers, [ 'question_id' => $question_id ], [ '%d' ] );
+    /**
+     * Delete a single question. Also removes per-question answers for this question.
+     */
+    public function delete_question( $question_id ) {
+        $question_id = (int) $question_id;
+        if ( $question_id <= 0 ) {
+            return false;
         }
-        return false !== $this->db->delete( $this->table_questions, [ 'id' => $question_id ], [ '%d' ] );
-    }
-
-    public function get_questions( int $quiz_id ) {
-        if ( $quiz_id <= 0 ) return [];
-
-        $rows = $this->db->get_results( $this->db->prepare(
-            "SELECT * FROM {$this->table_questions} WHERE quiz_id = %d ORDER BY id ASC",
-            $quiz_id
-        ), ARRAY_A );
-
-        if ( ! $rows ) return [];
-
-        foreach ( $rows as &$r ) {
-            $r['options']        = $this->maybe_decode( $r['options'] );
-            $r['correct_answer'] = $this->maybe_decode( $r['correct_answer'] );
-        }
-
-        return $rows;
+        // Clean attempt answers tied to this question.
+        $this->db->delete( $this->table_attempt_answers, array( 'question_id' => $question_id ), array( '%d' ) );
+        // Delete question.
+        $this->db->delete( $this->table_questions, array( 'id' => $question_id ), array( '%d' ) );
+        return true;
     }
 
     /* =========================
-     * ATTEMPTS & SCORING
-     * ======================= */
+     * Attempts / Results
+     * ========================= */
 
     /**
-     * Record an attempt and return the attempt id.
-     * $answers: array like [ question_id => scalar|string|array ]
-     * If $score_now is true, compute score server-side using stored correct answers.
+     * Record an attempt. Calculates score unless provided.
+     * $attempt_data:
+     *  - student_name, student_class, student_section, student_school, student_roll
+     *  - answers (array: question_id => value or array of values)
+     *  - obtained_marks (optional), total_marks (optional)
+     *
+     * Returns attempt ID or 0.
      */
-    public function record_attempt( int $quiz_id, array $student, array $answers, bool $score_now = true ) {
-        if ( $quiz_id <= 0 ) return 0;
+    public function record_attempt( $quiz_id, array $attempt_data ) {
+        $quiz_id = (int) $quiz_id;
+        if ( $quiz_id <= 0 ) {
+            return 0;
+        }
 
-        $now = current_time( 'mysql' );
+        $answers = isset( $attempt_data['answers'] ) ? (array) $attempt_data['answers'] : array();
 
-        $student_defaults = [
-            'student_name'    => '',
-            'student_class'   => '',
-            'student_section' => '',
-            'student_school'  => '',
-            'student_roll'    => '',
-        ];
-        $student = wp_parse_args( $student, $student_defaults );
+        // Compute score if not provided.
+        $obtained = isset( $attempt_data['obtained_marks'] ) ? (float) $attempt_data['obtained_marks'] : null;
+        $total    = isset( $attempt_data['total_marks'] ) ? (float) $attempt_data['total_marks'] : null;
 
-        $obtained = 0.0;
-        $total    = 0.0;
-
-        if ( $score_now ) {
+        if ( $obtained === null || $total === null ) {
             $score = $this->compute_score( $quiz_id, $answers );
             $obtained = $score['obtained'];
             $total    = $score['total'];
-        } else {
-            // Compute total as sum of points anyway (for consistency)
-            $questions = $this->get_questions( $quiz_id );
-            foreach ( $questions as $q ) {
-                $total += floatval( $q['points'] );
-            }
         }
-
-        $insert = [
-            'quiz_id'        => $quiz_id,
-            'student_name'   => sanitize_text_field( $student['student_name'] ),
-            'student_class'  => sanitize_text_field( $student['student_class'] ),
-            'student_section'=> sanitize_text_field( $student['student_section'] ),
-            'student_school' => sanitize_text_field( $student['student_school'] ),
-            'student_roll'   => sanitize_text_field( $student['student_roll'] ),
-            'obtained_marks' => $obtained,
-            'total_marks'    => $total,
-            'answers'        => wp_json_encode( $answers ),
-            'created_at'     => $now,
-        ];
 
         $ok = $this->db->insert(
             $this->table_attempts,
-            $insert,
-            [ '%d','%s','%s','%s','%s','%s','%f','%f','%s','%s' ]
+            array(
+                'quiz_id'        => $quiz_id,
+                'student_name'   => isset( $attempt_data['student_name'] ) ? sanitize_text_field( $attempt_data['student_name'] ) : null,
+                'student_class'  => isset( $attempt_data['student_class'] ) ? sanitize_text_field( $attempt_data['student_class'] ) : null,
+                'student_section'=> isset( $attempt_data['student_section'] ) ? sanitize_text_field( $attempt_data['student_section'] ) : null,
+                'student_school' => isset( $attempt_data['student_school'] ) ? sanitize_text_field( $attempt_data['student_school'] ) : null,
+                'student_roll'   => isset( $attempt_data['student_roll'] ) ? sanitize_text_field( $attempt_data['student_roll'] ) : null,
+                'obtained_marks' => $obtained,
+                'total_marks'    => $total,
+                'answers'        => $this->encode_data( $answers ),
+                'created_at'     => $this->now(),
+            ),
+            array( '%d','%s','%s','%s','%s','%s','%f','%f','%s','%s' )
         );
 
-        $attempt_id = $ok ? (int) $this->db->insert_id : 0;
+        if ( ! $ok ) {
+            return 0;
+        }
 
-        // Optionally populate per-question rows (for analytics)
-        if ( $attempt_id && $score_now ) {
-            $this->save_per_question_breakdown( $attempt_id, $quiz_id, $answers );
+        $attempt_id = (int) $this->db->insert_id;
+
+        // Optional: write per-question breakdown
+        if ( isset( $score ) && ! empty( $score['breakdown'] ) ) {
+            foreach ( $score['breakdown'] as $qid => $row ) {
+                $this->db->insert(
+                    $this->table_attempt_answers,
+                    array(
+                        'attempt_id'     => $attempt_id,
+                        'question_id'    => (int) $qid,
+                        'answer'         => $this->encode_data( $row['answer'] ),
+                        'is_correct'     => $row['is_correct'] ? 1 : 0,
+                        'points_awarded' => (float) $row['points_awarded'],
+                        'created_at'     => $this->now(),
+                    ),
+                    array( '%d','%d','%s','%d','%f','%s' )
+                );
+            }
         }
 
         return $attempt_id;
     }
 
     /**
-     * Compute score server-side.
+     * Compute score server-side from answers.
+     * Returns ['obtained'=>float,'total'=>float,'breakdown'=>[qid=>...]]
      */
-    public function compute_score( int $quiz_id, array $answers ) {
+    public function compute_score( $quiz_id, array $answers ) {
         $questions = $this->get_questions( $quiz_id );
 
         $obtained = 0.0;
         $total    = 0.0;
+        $breakdown = array();
 
         foreach ( $questions as $q ) {
-            $points   = floatval( $q['points'] );
+            $qid      = (int) $q['id'];
+            $type     = $q['type'];
+            $points   = (int) $q['points'];
             $total   += $points;
 
-            $qid      = (int) $q['id'];
             $correct  = $q['correct_answer'];
-            $type     = $q['type'];
+            $given    = isset( $answers[ $qid ] ) ? $answers[ $qid ] : null;
 
-            $given = $answers[ $qid ] ?? null;
+            $row = array(
+                'answer'         => $given,
+                'is_correct'     => false,
+                'points_awarded' => 0,
+            );
 
-            // Normalize
-            if ( $type === 'multiple' ) {
-                $correct_set = is_array( $correct ) ? array_values( array_map( 'strval', $correct ) ) : [];
-                $given_set   = is_array( $given )   ? array_values( array_map( 'strval', $given ) )   : [];
-                sort( $correct_set );
-                sort( $given_set );
-                if ( $correct_set === $given_set ) {
-                    $obtained += $points;
+            // Normalize multi-values to arrays of strings for comparison.
+            $norm = function( $v ) {
+                if ( is_array( $v ) ) {
+                    return array_values( array_map( 'strval', $v ) );
                 }
-            } elseif ( $type === 'single' ) {
-                if ( (string) $given !== '' && (string) $given === (string) ( is_array( $correct ) ? reset( $correct ) : $correct ) ) {
-                    $obtained += $points;
+                if ( $v === null ) {
+                    return array();
                 }
-            } else {
-                // text / textarea — simple exact (case-insensitive) match if correct answer provided
-                $correct_text = is_array( $correct ) ? (string) reset( $correct ) : (string) $correct;
-                if ( $correct_text !== '' && is_string( $given ) ) {
-                    if ( mb_strtolower( trim( $given ) ) === mb_strtolower( trim( $correct_text ) ) ) {
-                        $obtained += $points;
+                return array( (string) $v );
+            };
+
+            if ( $type === 'single' ) {
+                // Correct when exactly equals one of the correct values.
+                $corr = $norm( $correct );
+                $giv  = $norm( $given );
+                $is   = ( count( $giv ) === 1 && in_array( $giv[0], $corr, true ) );
+                $row['is_correct'] = $is;
+                $row['points_awarded'] = $is ? $points : 0;
+            } elseif ( $type === 'multiple' ) {
+                // Correct when sets match exactly.
+                $corr = $norm( $correct );
+                sort( $corr );
+                $giv  = $norm( $given );
+                sort( $giv );
+                $is   = ( $corr === $giv );
+                $row['is_correct'] = $is;
+                $row['points_awarded'] = $is ? $points : 0;
+            } else { // text / textarea
+                // If a correct answer list exists, do case-insensitive match against any.
+                $giv  = trim( (string) ( is_array( $given ) ? implode( ' ', $given ) : $given ) );
+                $corr = $norm( $correct );
+                if ( ! empty( $corr ) ) {
+                    $match = false;
+                    foreach ( $corr as $c ) {
+                        if ( mb_strtolower( trim( $c ) ) === mb_strtolower( $giv ) ) {
+                            $match = true;
+                            break;
+                        }
                     }
-                }
-            }
-        }
-
-        return [
-            'obtained' => (float) $obtained,
-            'total'    => (float) $total,
-        ];
-    }
-
-    protected function save_per_question_breakdown( int $attempt_id, int $quiz_id, array $answers ) {
-        $questions = $this->get_questions( $quiz_id );
-        if ( ! $questions ) return;
-
-        foreach ( $questions as $q ) {
-            $qid     = (int) $q['id'];
-            $type    = $q['type'];
-            $points  = floatval( $q['points'] );
-            $correct = $q['correct_answer'];
-
-            $given = $answers[ $qid ] ?? null;
-
-            $is_correct = 0;
-
-            if ( $type === 'multiple' ) {
-                $c = is_array( $correct ) ? array_values( array_map( 'strval', $correct ) ) : [];
-                $g = is_array( $given )   ? array_values( array_map( 'strval', $given ) )   : [];
-                sort( $c ); sort( $g );
-                $is_correct = ( $c === $g ) ? 1 : 0;
-            } elseif ( $type === 'single' ) {
-                $right = is_array( $correct ) ? (string) reset( $correct ) : (string) $correct;
-                $is_correct = ( (string) $given !== '' && (string) $given === $right ) ? 1 : 0;
-            } else {
-                $right = is_array( $correct ) ? (string) reset( $correct ) : (string) $correct;
-                if ( $right !== '' && is_string( $given ) ) {
-                    $is_correct = ( mb_strtolower( trim( $given ) ) === mb_strtolower( trim( $right ) ) ) ? 1 : 0;
+                    $row['is_correct'] = $match;
+                    $row['points_awarded'] = $match ? $points : 0;
+                } else {
+                    // No correct key defined -> award 0 (subjective grading could be added later).
+                    $row['is_correct'] = false;
+                    $row['points_awarded'] = 0;
                 }
             }
 
-            $this->db->insert(
-                $this->table_attempt_answers,
-                [
-                    'attempt_id'     => $attempt_id,
-                    'question_id'    => $qid,
-                    'answer'         => wp_json_encode( $given ),
-                    'is_correct'     => $is_correct,
-                    'points_awarded' => $is_correct ? $points : 0.0,
-                ],
-                [ '%d','%d','%s','%d','%f' ]
-            );
+            $obtained += (float) $row['points_awarded'];
+            $breakdown[ $qid ] = $row;
         }
+
+        return array(
+            'obtained'  => (float) $obtained,
+            'total'     => (float) $total,
+            'breakdown' => $breakdown,
+        );
     }
 
-    public function get_attempt( int $attempt_id ) {
-        if ( $attempt_id <= 0 ) return null;
+    /**
+     * Get attempts for a quiz.
+     * $args = ['limit'=>int, 'offset'=>int, 'order'=>'DESC'|'ASC']
+     */
+    public function get_results( $quiz_id, array $args = array() ) {
+        $quiz_id = (int) $quiz_id;
+        if ( $quiz_id <= 0 ) {
+            return array();
+        }
 
-        $row = $this->db->get_row( $this->db->prepare(
-            "SELECT * FROM {$this->table_attempts} WHERE id = %d",
-            $attempt_id
-        ), ARRAY_A );
+        $limit  = isset( $args['limit'] )  ? max( 1, (int) $args['limit'] )  : 20;
+        $offset = isset( $args['offset'] ) ? max( 0, (int) $args['offset'] ) : 0;
+        $order  = isset( $args['order'] )  ? strtoupper( $args['order'] )     : 'DESC';
+        $order  = ( $order === 'ASC' ) ? 'ASC' : 'DESC';
 
-        if ( ! $row ) return null;
+        $sql = $this->db->prepare(
+            "SELECT * FROM {$this->table_attempts} WHERE quiz_id = %d ORDER BY created_at {$order} LIMIT %d OFFSET %d",
+            $quiz_id,
+            $limit,
+            $offset
+        );
 
-        $row['answers'] = $this->maybe_decode( $row['answers'] );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $this->db->get_results( $sql, ARRAY_A ) ?: array();
+
+        foreach ( $rows as &$r ) {
+            $r['answers'] = $this->decode_data( $r['answers'] );
+        }
+        unset( $r );
+
+        return $rows;
+    }
+
+    /**
+     * Convenience wrapper used in some admin code.
+     */
+    public function get_attempts_by_quiz( $quiz_id, $limit = 20, $offset = 0 ) {
+        return $this->get_results( $quiz_id, array( 'limit' => $limit, 'offset' => $offset ) );
+    }
+
+    /**
+     * Get a single attempt with decoded answers.
+     * Returns associative array or null.
+     */
+    public function get_attempt( $attempt_id ) {
+        $attempt_id = (int) $attempt_id;
+        if ( $attempt_id <= 0 ) {
+            return null;
+        }
+        $row = $this->db->get_row(
+            $this->db->prepare(
+                "SELECT * FROM {$this->table_attempts} WHERE id = %d",
+                $attempt_id
+            ),
+            ARRAY_A
+        );
+        if ( ! $row ) {
+            return null;
+        }
+        $row['answers'] = $this->decode_data( $row['answers'] );
         return $row;
-    }
-
-    /**
-     * Fetch attempts for a quiz (returns array of stdClass like $wpdb->get_results()).
-     * If $limit < 0 → no LIMIT.
-     */
-    public function get_attempts_by_quiz( int $quiz_id, int $limit = 20, int $offset = 0 ) {
-        if ( $quiz_id <= 0 ) return [];
-
-        if ( $limit < 0 ) {
-            $sql = $this->db->prepare(
-                "SELECT * FROM {$this->table_attempts} WHERE quiz_id = %d ORDER BY created_at DESC",
-                $quiz_id
-            );
-        } else {
-            $limit  = max( 1, $limit );
-            $offset = max( 0, $offset );
-            $sql = $this->db->prepare(
-                "SELECT * FROM {$this->table_attempts} WHERE quiz_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
-                $quiz_id, $limit, $offset
-            );
-        }
-
-        return $this->db->get_results( $sql );
-    }
-
-    /* =========================
-     * HELPERS
-     * ======================= */
-
-    /**
-     * Decode JSON if possible; fallback to maybe_unserialize for legacy rows.
-     */
-    protected function maybe_decode( $raw ) {
-        if ( is_array( $raw ) || is_object( $raw ) ) {
-            return $raw;
-        }
-        if ( ! is_string( $raw ) ) {
-            return $raw;
-        }
-        $raw = trim( $raw );
-        if ( $raw === '' ) {
-            return [];
-        }
-        $decoded = json_decode( $raw, true );
-        if ( json_last_error() === JSON_ERROR_NONE ) {
-            return $decoded;
-        }
-        // Fallback: some older code saved serialized arrays
-        $maybe = maybe_unserialize( $raw );
-        if ( is_array( $maybe ) || is_object( $maybe ) ) {
-            return $maybe;
-        }
-        return $raw;
     }
 }
