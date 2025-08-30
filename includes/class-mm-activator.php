@@ -4,116 +4,125 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+/**
+ * Markdown Master - Activator (DB creation & migrations)
+ * Creates/updates:
+ *  - {$wpdb->prefix}mm_quizzes
+ *  - {$wpdb->prefix}mm_questions
+ *  - {$wpdb->prefix}mm_attempts
+ *  - {$wpdb->prefix}mm_attempt_answers
+ *
+ * IMPORTANT:
+ *  - No output/echo here (prevents "unexpected output during activation")
+ *  - Keep versions in sync when altering schema
+ */
 class MM_Activator {
 
+    const DB_VERSION_OPTION = 'mm_db_version';
+    const DB_VERSION        = '1.0.0';
+
     /**
-     * Run on plugin activation: create DB tables and default options.
+     * Plugin activation entrypoint
      */
     public static function activate() {
+        self::create_or_upgrade_tables();
+        // Store current version (for future migrations)
+        update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+    }
+
+    /**
+     * Safe to call on upgrades too (e.g., from admin_init if versions differ)
+     */
+    public static function create_or_upgrade_tables() {
         global $wpdb;
 
-        // Ensure required WP function
+        // Load dbDelta
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         $charset_collate = $wpdb->get_charset_collate();
-        $prefix = $wpdb->prefix;
 
-        /*
-         * Tables:
-         *  - {prefix}mm_quizzes
-         *  - {prefix}mm_questions
-         *  - {prefix}mm_attempts
-         *  - {prefix}mm_attempt_answers
-         *
-         * Note: we use DATETIME fields with zero default to avoid compatibility issues
-         * with older MySQL versions that may not support CURRENT_TIMESTAMP defaults.
-         */
+        $table_quizzes  = $wpdb->prefix . 'mm_quizzes';
+        $table_questions = $wpdb->prefix . 'mm_questions';
+        $table_attempts  = $wpdb->prefix . 'mm_attempts';
+        $table_attempt_answers = $wpdb->prefix . 'mm_attempt_answers';
 
-        $sql = "
-        CREATE TABLE {$prefix}mm_quizzes (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            title VARCHAR(255) NOT NULL,
-            description LONGTEXT NULL,
-            settings LONGTEXT NULL, /* serialized array: shuffle, time_limit, attempts_allowed, show_answers, etc. */
-            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-            updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-            PRIMARY KEY  (id)
-        ) {$charset_collate};
+        // NOTE: dbDelta is picky: keep PRIMARY KEY and index definitions exactly formatted.
+        $sql_quizzes = "
+CREATE TABLE {$table_quizzes} (
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  description LONGTEXT NULL,
+  settings LONGTEXT NULL,
+  shuffle TINYINT(1) NOT NULL DEFAULT 0,
+  time_limit INT(11) NOT NULL DEFAULT 0,
+  attempts_allowed INT(11) NOT NULL DEFAULT 0,
+  show_answers TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+  updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY  (id)
+) {$charset_collate};";
 
-        CREATE TABLE {$prefix}mm_questions (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            quiz_id BIGINT(20) UNSIGNED NOT NULL,
-            question_text LONGTEXT NOT NULL,
-            question_type VARCHAR(50) NOT NULL DEFAULT 'mcq', /* mcq, checkbox, text, etc. */
-            options LONGTEXT NULL, /* serialized array of options (if applicable) */
-            correct_answer LONGTEXT NULL, /* serialized scalar or array */
-            points FLOAT NOT NULL DEFAULT 1.0,
-            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-            updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-            PRIMARY KEY (id),
-            KEY quiz_id (quiz_id)
-        ) {$charset_collate};
+        $sql_questions = "
+CREATE TABLE {$table_questions} (
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  quiz_id BIGINT(20) UNSIGNED NOT NULL,
+  question_text LONGTEXT NOT NULL,
+  type VARCHAR(32) NOT NULL DEFAULT 'single',
+  options LONGTEXT NULL,
+  correct_answer LONGTEXT NULL,
+  points DECIMAL(10,2) NOT NULL DEFAULT 1.00,
+  image VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+  updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY  (id),
+  KEY quiz_id (quiz_id)
+) {$charset_collate};";
 
-        CREATE TABLE {$prefix}mm_attempts (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            quiz_id BIGINT(20) UNSIGNED NOT NULL,
-            student_name VARCHAR(191) NULL,
-            student_roll VARCHAR(191) NULL,
-            student_class VARCHAR(191) NULL,
-            student_section VARCHAR(191) NULL,
-            student_school VARCHAR(191) NULL,
-            obtained_marks FLOAT NOT NULL DEFAULT 0,
-            total_marks FLOAT NOT NULL DEFAULT 0,
-            meta LONGTEXT NULL, /* serialized/stored extra student data */
-            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-            PRIMARY KEY (id),
-            KEY quiz_id (quiz_id)
-        ) {$charset_collate};
+        $sql_attempts = "
+CREATE TABLE {$table_attempts} (
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  quiz_id BIGINT(20) UNSIGNED NOT NULL,
+  student_name VARCHAR(191) NOT NULL,
+  student_class VARCHAR(191) NULL,
+  student_section VARCHAR(191) NULL,
+  student_school VARCHAR(191) NULL,
+  student_roll VARCHAR(191) NULL,
+  obtained_marks DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  total_marks DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  answers LONGTEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY  (id),
+  KEY quiz_id (quiz_id)
+) {$charset_collate};";
 
-        CREATE TABLE {$prefix}mm_attempt_answers (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            attempt_id BIGINT(20) UNSIGNED NOT NULL,
-            question_id BIGINT(20) UNSIGNED NOT NULL,
-            given_answer LONGTEXT NULL, /* serialized or scalar */
-            is_correct TINYINT(1) NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
-            PRIMARY KEY (id),
-            KEY attempt_id (attempt_id),
-            KEY question_id (question_id)
-        ) {$charset_collate};
-        ";
+        $sql_attempt_answers = "
+CREATE TABLE {$table_attempt_answers} (
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  attempt_id BIGINT(20) UNSIGNED NOT NULL,
+  question_id BIGINT(20) UNSIGNED NOT NULL,
+  answer LONGTEXT NULL,
+  is_correct TINYINT(1) NOT NULL DEFAULT 0,
+  points_awarded DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  PRIMARY KEY  (id),
+  KEY attempt_id (attempt_id),
+  KEY question_id (question_id)
+) {$charset_collate};";
 
-        // Run DB Delta to create/update tables
-        dbDelta( $sql );
+        // Run dbDelta (can take an array)
+        dbDelta( $sql_quizzes );
+        dbDelta( $sql_questions );
+        dbDelta( $sql_attempts );
+        dbDelta( $sql_attempt_answers );
+    }
 
-        // Set / update plugin default options (safely)
-        $default_settings = array(
-            'show_answers'         => 'end',   // 'end' or 'instant' or 'never'
-            'theme'                => 'default',
-            'timer_enabled'        => false,
-            'randomize_questions'  => false,
-            'max_attempts'         => 0,       // 0 => unlimited
-        );
-
-        if ( get_option( 'mm_version' ) === false ) {
-            add_option( 'mm_version', '1.0' );
-        } else {
-            update_option( 'mm_version', '1.0' );
-        }
-
-        if ( get_option( 'mm_settings' ) === false ) {
-            add_option( 'mm_settings', maybe_serialize( $default_settings ) );
-        } else {
-            // migrate existing if needed
-            $existing = get_option( 'mm_settings' );
-            if ( is_serialized( $existing ) ) {
-                $existing = maybe_unserialize( $existing );
-            }
-            if ( ! is_array( $existing ) ) {
-                $existing = (array) $existing;
-            }
-            $merged = array_merge( $default_settings, $existing );
-            update_option( 'mm_settings', maybe_serialize( $merged ) );
+    /**
+     * Optionally call this on admin_init to apply migrations if version changed.
+     */
+    public static function maybe_upgrade() {
+        $stored = get_option( self::DB_VERSION_OPTION, '' );
+        if ( version_compare( $stored, self::DB_VERSION, '<' ) ) {
+            self::create_or_upgrade_tables();
+            update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
         }
     }
 }

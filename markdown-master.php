@@ -30,7 +30,8 @@ define( 'MM_PUBLIC', MM_PLUGIN_DIR . 'public/' );
 define( 'MM_ASSETS', MM_PLUGIN_DIR . 'assets/' );
 
 /**
- * Autoloader for classes
+ * Autoloader for classes named MM_*
+ * Fallback: if autoloader cannot find a file, other code may require it explicitly.
  */
 spl_autoload_register( function ( $class ) {
     if ( strpos( $class, 'MM_' ) === 0 ) {
@@ -43,26 +44,63 @@ spl_autoload_register( function ( $class ) {
 });
 
 /**
- * Activation and Deactivation Hooks
+ * Ensure core include files exist and are loadable.
+ * Using require_once here is safe because files are idempotent and won't produce output.
+ * These are small, essential classes used during activation and basic operations.
  */
-function mm_activate_plugin() {
+if ( file_exists( MM_INCLUDES . 'class-mm-activator.php' ) ) {
     require_once MM_INCLUDES . 'class-mm-activator.php';
-    MM_Activator::activate();
+}
+if ( file_exists( MM_INCLUDES . 'class-mm-quiz.php' ) ) {
+    require_once MM_INCLUDES . 'class-mm-quiz.php';
+}
+
+/**
+ * Activation and Deactivation Hooks
+ * - Keep wrapper functions to require files and call the class methods so it works regardless of autoloader state.
+ */
+
+function mm_activate_plugin() {
+    // Class file included above via require_once, but keep safe-check here
+    if ( ! class_exists( 'MM_Activator' ) && file_exists( MM_INCLUDES . 'class-mm-activator.php' ) ) {
+        require_once MM_INCLUDES . 'class-mm-activator.php';
+    }
+    if ( class_exists( 'MM_Activator' ) ) {
+        MM_Activator::activate();
+    }
 }
 register_activation_hook( __FILE__, 'mm_activate_plugin' );
 
 function mm_deactivate_plugin() {
-    require_once MM_INCLUDES . 'class-mm-deactivator.php';
-    MM_Deactivator::deactivate();
+    if ( ! class_exists( 'MM_Deactivator' ) && file_exists( MM_INCLUDES . 'class-mm-deactivator.php' ) ) {
+        require_once MM_INCLUDES . 'class-mm-deactivator.php';
+    }
+    if ( class_exists( 'MM_Deactivator' ) ) {
+        MM_Deactivator::deactivate();
+    }
 }
 register_deactivation_hook( __FILE__, 'mm_deactivate_plugin' );
 
 /**
- * Initialize the plugin
+ * Initialize the plugin (load loader which wires admin / frontend)
+ * We hook on plugins_loaded so other plugins and WP core are available.
  */
 function mm_run_plugin() {
-    require_once MM_INCLUDES . 'class-mm-loader.php';
-    $plugin = new MM_Loader();
-    $plugin->run();
+    // Ensure loader exists
+    if ( file_exists( MM_INCLUDES . 'class-mm-loader.php' ) ) {
+        require_once MM_INCLUDES . 'class-mm-loader.php';
+        // Loader will instantiate admin/frontend and call init_hooks()
+        if ( class_exists( 'MM_Loader' ) ) {
+            $plugin = new MM_Loader();
+            // optionally trigger activator's maybe_upgrade if exists
+            if ( method_exists( 'MM_Activator', 'maybe_upgrade' ) ) {
+                // silent upgrade (no output)
+                MM_Activator::maybe_upgrade();
+            }
+            $plugin->run();
+        }
+    } else {
+        // If loader missing, fail silently (no output). Admin notice logic can be added to inform the admin.
+    }
 }
 add_action( 'plugins_loaded', 'mm_run_plugin' );
