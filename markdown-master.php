@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name:       Markdown Master
- * Plugin URI:        https://infinitydecoder.com
- * Description:       A powerful plugin to create quizzes, markdown notes, and code snippets with import/export and analytics.
- * Version:           1.0.0
+ * Plugin URI:        https://infinitydecoder.com/markdown-master
+ * Description:       Production-grade quiz and survey engine with 11 question types, markdown rendering, code snippets, question banks, lead capture, and comprehensive analytics. Built for security, performance, and extensibility.
+ * Version:           2.0.0
+ * Requires at least: 5.8
+ * Requires PHP:      8.0
  * Author:            Infinity Decoder
  * Author URI:        https://infinitydecoder.com
  * License:           GPL-2.0+
@@ -20,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define plugin constants
  */
-define( 'MM_VERSION', '1.0.0' );
+define( 'MM_VERSION', '2.0.0' );
 define( 'MM_PLUGIN_FILE', __FILE__ );
 define( 'MM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -28,6 +30,44 @@ define( 'MM_INCLUDES', MM_PLUGIN_DIR . 'includes/' );
 define( 'MM_ADMIN', MM_PLUGIN_DIR . 'admin/' );
 define( 'MM_PUBLIC', MM_PLUGIN_DIR . 'public/' );
 define( 'MM_ASSETS', MM_PLUGIN_DIR . 'assets/' );
+
+/**
+ * Check PHP and WordPress version requirements
+ */
+function mm_check_requirements() {
+    $php_version = '8.0';
+    $wp_version = '5.8';
+    
+    if ( version_compare( PHP_VERSION, $php_version, '<' ) ) {
+        deactivate_plugins( plugin_basename( __FILE__ ) );
+        wp_die(
+            sprintf(
+                /* translators: 1: Required PHP version, 2: Current PHP version */
+                esc_html__( 'Markdown Master requires PHP %1$s or higher. Your server is running PHP %2$s. Please upgrade PHP or contact your hosting provider.', 'markdown-master' ),
+                esc_html( $php_version ),
+                esc_html( PHP_VERSION )
+            ),
+            esc_html__( 'Plugin Activation Error', 'markdown-master' ),
+            array( 'back_link' => true )
+        );
+    }
+    
+    global $wp_version;
+    if ( version_compare( $wp_version, $wp_version, '<' ) ) {
+        deactivate_plugins( plugin_basename( __FILE__ ) );
+        wp_die(
+            sprintf(
+                /* translators: 1: Required WordPress version, 2: Current WordPress version */
+                esc_html__( 'Markdown Master requires WordPress %1$s or higher. You are running WordPress %2$s. Please upgrade WordPress.', 'markdown-master' ),
+                esc_html( $wp_version ),
+                esc_html( $wp_version )
+            ),
+            esc_html__( 'Plugin Activation Error', 'markdown-master' ),
+            array( 'back_link' => true )
+        );
+    }
+}
+register_activation_hook( __FILE__, 'mm_check_requirements' );
 
 /**
  * Autoloader for classes named MM_*
@@ -43,16 +83,31 @@ spl_autoload_register( function ( $class ) {
     }
 });
 
+
 /**
  * Ensure core include files exist and are loadable.
- * Using require_once here is safe because files are idempotent and won't produce output.
- * These are small, essential classes used during activation and basic operations.
+ * Load critical classes that are needed during activation and runtime.
  */
-if ( file_exists( MM_INCLUDES . 'class-mm-activator.php' ) ) {
-    require_once MM_INCLUDES . 'class-mm-activator.php';
-}
-if ( file_exists( MM_INCLUDES . 'class-mm-quiz.php' ) ) {
-    require_once MM_INCLUDES . 'class-mm-quiz.php';
+$core_classes = array(
+    'class-mm-activator.php',
+    'class-mm-security.php',
+    'class-mm-cache.php',
+    'class-mm-quiz.php',
+    'class-mm-question-bank.php',
+    'class-mm-lead-capture.php',
+    'class-mm-markdown.php',
+    'class-mm-markdown-snippets.php',
+    'class-mm-snippet.php',
+    'class-mm-math-renderer.php',
+    'class-mm-highlighter.php',
+    'class-mm-admin-enhanced.php',
+);
+
+foreach ( $core_classes as $class_file ) {
+    $filepath = MM_INCLUDES . $class_file;
+    if ( file_exists( $filepath ) ) {
+        require_once $filepath;
+    }
 }
 
 /**

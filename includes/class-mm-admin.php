@@ -197,12 +197,12 @@ class MM_Admin {
         if ( ! class_exists( 'MM_Quiz' ) ) {
             if ( file_exists( MM_INCLUDES . 'class-mm-quiz.php' ) ) {
                 require_once MM_INCLUDES . 'class-mm-quiz.php';
-            } else {
-                // Model missing — admin pages should show error
             }
         }
         $this->model = new MM_Quiz();
+    }
 
+    public function init_hooks() {
         add_action( 'admin_menu', [ $this, 'register_menu' ] );
         add_action( 'admin_init', [ $this, 'maybe_process_import' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
@@ -274,10 +274,10 @@ class MM_Admin {
         }
 
         // CSS
-        wp_enqueue_style( 'mm-admin-css', MM_PLUGIN_URL . 'assets/admin/css/mm-admin.css', array(), MM_VERSION );
+        wp_enqueue_style( 'mm-admin-css', MM_PLUGIN_URL . 'assets/css/mm-admin.css', array(), MM_VERSION );
 
         // JS (depends on jQuery)
-        wp_enqueue_script( 'mm-admin-js', MM_PLUGIN_URL . 'assets/admin/js/mm-admin.js', array( 'jquery' ), MM_VERSION, true );
+        wp_enqueue_script( 'mm-admin-js', MM_PLUGIN_URL . 'assets/js/mm-admin.js', array( 'jquery', 'jquery-ui-sortable' ), MM_VERSION, true );
 
         // Localize
         wp_localize_script( 'mm-admin-js', 'MM_Admin', array(
@@ -977,4 +977,4 @@ class MM_Admin {
     }
 }
 
-new MM_Admin();
+// Removed redundant global instantiation: new MM_Admin();
