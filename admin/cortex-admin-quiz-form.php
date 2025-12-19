@@ -3,7 +3,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 $quiz_id = isset($_GET['quiz_id']) ? intval($_GET['quiz_id']) : 0;
 $quiz = $quiz_id ? Cortex_Quiz::get_quiz($quiz_id) : null;
+// Prepare data for JS
+$quiz_data_json = $quiz ? json_encode([ 'lead_fields' => $quiz['lead_fields'] ?? [] ]) : '{}';
 ?>
+<script>
+    var cortex_quiz_data = <?php echo $quiz_data_json; ?>;
+</script>
 <div class="cortex-admin-wrap">
     <header class="cortex-header">
         <h1><?php echo $quiz_id ? esc_html__( 'Edit Quiz', 'cortex' ) : esc_html__( 'Create New Quiz', 'cortex' ); ?></h1>
@@ -235,6 +240,50 @@ $quiz = $quiz_id ? Cortex_Quiz::get_quiz($quiz_id) : null;
                     <input type="text" name="questions[<#= data.id #>][hint]" value="<#= data.hint #>" class="cortex-input-medium">
                 </div>
             </div>
+        </div>
+    </div>
+</script>
+
+<!-- Template: Lead Field Item -->
+<script type="text/html" id="tmpl-cortex-lead-field-item">
+    <div class="cortex-lead-field-item cortex-card" data-id="<#= data.id #>">
+        <div class="cortex-card-header cortex-sortable-handle">
+            <strong><span class="dashicons dashicons-menu"></span> <#= data.label || 'New Field' #></strong>
+            <button type="button" class="cortex-btn-icon cortex-remove-lead-field danger"><span class="dashicons dashicons-no-alt"></span></button>
+        </div>
+        <div class="cortex-card-body">
+            <div class="cortex-form-row">
+                <div class="cortex-field-col">
+                    <label>Field Label</label>
+                    <input type="text" name="lead_fields[<#= data.id #>][label]" value="<#= data.label #>" class="cortex-input-full cortex-update-preview" placeholder="e.g. Full Name">
+                </div>
+                <div class="cortex-field-col">
+                    <label>Type</label>
+                    <select name="lead_fields[<#= data.id #>][type]" class="cortex-select-full">
+                        <option value="text" <#= data.type === 'text' ? 'selected' : '' #>>Text</option>
+                        <option value="email" <#= data.type === 'email' ? 'selected' : '' #>>Email</option>
+                        <option value="number" <#= data.type === 'number' ? 'selected' : '' #>>Number</option>
+                        <option value="select" <#= data.type === 'select' ? 'selected' : '' #>>Dropdown</option>
+                    </select>
+                </div>
+            </div>
+            <div class="cortex-form-row">
+                <div class="cortex-field-col">
+                    <label>Field Name (Slug)</label>
+                    <input type="text" name="lead_fields[<#= data.id #>][name]" value="<#= data.name #>" class="cortex-input-full" placeholder="e.g. full_name">
+                </div>
+                <div class="cortex-field-col" style="padding-top: 24px;">
+                    <label class="cortex-checkbox-inline">
+                        <input type="checkbox" name="lead_fields[<#= data.id #>][required]" value="1" <#= data.required ? 'checked' : '' #>> Required
+                    </label>
+                </div>
+            </div>
+            <# if (data.type === 'select') { #>
+                <div class="cortex-form-group" style="margin-top: 10px;">
+                     <label>Options (comma separated)</label>
+                     <input type="text" name="lead_fields[<#= data.id #>][options]" value="<#= data.options #>" class="cortex-input-full" placeholder="Option 1, Option 2">
+                </div>
+            <# } #>
         </div>
     </div>
 </script>

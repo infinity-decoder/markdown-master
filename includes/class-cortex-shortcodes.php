@@ -264,8 +264,19 @@ class Cortex_Shortcodes {
             unset( $q );
         }
 
+        // Fetch Global Settings for Theme
+        $theme_class = '';
+        if ( class_exists( 'Cortex_Settings' ) ) {
+            $settings_model = new Cortex_Settings();
+            $settings = $settings_model->get_all();
+            $theme = isset( $settings['theme'] ) ? $settings['theme'] : 'default';
+            if ( $theme && $theme !== 'default' ) {
+                $theme_class = 'cortex-theme-' . sanitize_html_class( $theme );
+            }
+        }
+
         ?>
-        <div class="cortex-quiz-container" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>">
+        <div class="cortex-quiz-container <?php echo esc_attr( $theme_class ); ?>" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>">
             
             <?php if ( $quiz['show_welcome_screen'] && ! empty( $quiz['welcome_content'] ) ) : ?>
                 <div class="cortex-quiz-welcome">

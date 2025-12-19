@@ -384,6 +384,7 @@ class Cortex_Admin {
 
         // JS (depends on jQuery, Underscore, wp-util)
         wp_enqueue_script( 'cortex-admin-js', CORTEX_PLUGIN_URL . 'assets/js/cortex-admin.js', array( 'jquery', 'jquery-ui-sortable', 'underscore', 'wp-util' ), CORTEX_VERSION, true );
+        wp_enqueue_script( 'cortex-lead-fields-js', CORTEX_PLUGIN_URL . 'assets/admin/js/cortex-lead-fields.js', array( 'jquery', 'jquery-ui-sortable', 'underscore', 'wp-util' ), CORTEX_VERSION, true );
 
         // Localize
         wp_localize_script( 'cortex-admin-js', 'Cortex_Admin', array(
@@ -1409,21 +1410,25 @@ class Cortex_Admin {
         );
 
         // Handle dynamic lead fields
-        $lead_fields = array();
-        if ( isset( $_POST['lead_fields'] ) && is_array( $_POST['lead_fields'] ) ) {
-            foreach ( $_POST['lead_fields'] as $field ) {
-                if ( ! empty( $field['label'] ) ) {
-                    $label = sanitize_text_field( $field['label'] );
-                    $lead_fields[] = array(
-                        'id'       => sanitize_title( $label ), // Generate a slug-like ID
-                        'label'    => $label,
-                        'type'     => sanitize_text_field( $field['type'] ?? 'text' ),
-                        'required' => isset( $field['required'] ) ? 1 : 0,
-                    );
-                }
+    $lead_fields = array();
+    if ( isset( $_POST['lead_fields'] ) && is_array( $_POST['lead_fields'] ) ) {
+        foreach ( $_POST['lead_fields'] as $field ) {
+            if ( ! empty( $field['label'] ) ) {
+                $label = sanitize_text_field( $field['label'] );
+                // Use provided name/slug or fallback to label
+                $name  = ! empty( $field['name'] ) ? sanitize_title( $field['name'] ) : sanitize_title( $label );
+                
+                $lead_fields[] = array(
+                    'name'     => $name, 
+                    'label'    => $label,
+                    'type'     => sanitize_text_field( $field['type'] ?? 'text' ),
+                    'required' => isset( $field['required'] ) ? 1 : 0,
+                    'options'  => isset( $field['options'] ) ? sanitize_text_field( $field['options'] ) : '',
+                );
             }
         }
-        $data['lead_fields'] = $lead_fields;
+    }
+    $data['lead_fields'] = $lead_fields;
 
         // Settings array for extra flexibility
         $data['settings'] = array(

@@ -29,6 +29,86 @@
     --cortex-transition: all 0.3s ease;
 }
 
+/* -- Themes -- */
+
+/* Compact Theme */
+.cortex-theme-compact {
+    --cortex-radius: 2px;
+}
+
+.cortex-theme-compact .cortex-quiz-welcome,
+.cortex-theme-compact .cortex-quiz-form {
+    padding: 1rem;
+}
+
+.cortex-theme-compact .cortex-question {
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.cortex-theme-compact .cortex-field input,
+.cortex-theme-compact .cortex-text-answer {
+    padding: 0.5rem;
+}
+
+/* Spacious Theme */
+.cortex-theme-spacious {
+    --cortex-radius: 8px;
+}
+
+.cortex-theme-spacious .cortex-quiz-welcome,
+.cortex-theme-spacious .cortex-quiz-form {
+    padding: 3rem;
+    max-width: 900px;
+}
+
+.cortex-theme-spacious .cortex-question {
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+
+/* Dark Theme */
+.cortex-theme-dark {
+    --cortex-primary: #61afef;
+    --cortex-primary-hover: #4fa6ea;
+    --cortex-text: #e0e0e0;
+    --cortex-text-light: #aaa;
+    --cortex-border: #444;
+    --cortex-background: #2c313a;
+    --cortex-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cortex-theme-dark .cortex-quiz-welcome,
+.cortex-theme-dark .cortex-quiz-form {
+    background: #21252b;
+    border-color: #333;
+    color: #e0e0e0;
+}
+
+.cortex-theme-dark .cortex-question {
+    background: #282c34;
+}
+
+.cortex-theme-dark input,
+.cortex-theme-dark select,
+.cortex-theme-dark textarea {
+    background: #1e2227;
+    border-color: #444;
+    color: #fff;
+}
+
+.cortex-theme-dark .cortex-radio-label,
+.cortex-theme-dark .cortex-checkbox-label {
+    background: #282c34;
+    border-color: #444;
+}
+
+.cortex-theme-dark .cortex-radio-label:hover,
+.cortex-theme-dark .cortex-checkbox-label:hover {
+    background: #333842;
+    border-color: var(--cortex-primary);
+}
+
 /* ==========================================================================
    Quiz Container
    ========================================================================== */
