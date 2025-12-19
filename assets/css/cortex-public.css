@@ -1,0 +1,794 @@
+/**
+ * Cortex 2.0 - Frontend Styles
+ * 
+ * Mobile-first, theme-agnostic styling for quizzes, markdown, and code.
+ * Uses CSS custom properties for easy customization.
+ * 
+ * @package MarkdownMaster
+ * @since 2.0.0
+ */
+
+/* ==========================================================================
+   CSS Custom Properties
+   ========================================================================== */
+
+:root {
+    --cortex-primary: #0073aa;
+    --cortex-primary-hover: #005177;
+    --cortex-success: #46b450;
+    --cortex-warning: #ffb900;
+    --cortex-error: #dc3232;
+
+    --cortex-text: #333;
+    --cortex-text-light: #666;
+    --cortex-border: #ddd;
+    --cortex-background: #f9f9f9;
+
+    --cortex-radius: 4px;
+    --cortex-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --cortex-transition: all 0.3s ease;
+}
+
+/* ==========================================================================
+   Quiz Container
+   ========================================================================== */
+
+.cortex-quiz-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.cortex-quiz-welcome,
+.cortex-quiz-form {
+    background: #fff;
+    border: 1px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    padding: 2rem;
+    box-shadow: var(--cortex-shadow);
+}
+
+/* Welcome Screen */
+.cortex-quiz-welcome {
+    text-align: center;
+}
+
+.cortex-welcome-content {
+    margin-bottom: 2rem;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.cortex-start-quiz {
+    padding: 1rem 2rem;
+    font-size: 1.1em;
+    cursor: pointer;
+}
+
+/* Quiz Header */
+.cortex-quiz-header {
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--cortex-primary);
+    padding-bottom: 1rem;
+}
+
+.cortex-quiz-title {
+    margin: 0 0 0.5rem;
+    color: var(--cortex-primary);
+    font-size: 1.8em;
+}
+
+.cortex-quiz-description {
+    color: var(--cortex-text-light);
+    line-height: 1.6;
+}
+
+.cortex-quiz-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--cortex-warning);
+    color: #000;
+    border-radius: var(--cortex-radius);
+    font-weight: bold;
+    margin-top: 1rem;
+}
+
+.cortex-timer-icon {
+    font-size: 1.2em;
+}
+
+/* ==========================================================================
+   Questions
+   ========================================================================== */
+
+.cortex-quiz-questions {
+    margin: 2rem 0;
+}
+
+.cortex-question {
+    background: var(--cortex-background);
+    border: 1px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: var(--cortex-transition);
+}
+
+.cortex-question:hover {
+    box-shadow: var(--cortex-shadow);
+}
+
+.cortex-question-header {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.cortex-question-number {
+    flex-shrink: 0;
+    font-weight: bold;
+    color: var(--cortex-primary);
+    font-size: 1.1em;
+}
+
+.cortex-question-text {
+    flex: 1;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.cortex-question-body {
+    margin-left: 2rem;
+}
+
+/* Radio Options */
+.cortex-radio-options,
+.cortex-checkbox-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cortex-radio-label,
+.cortex-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #fff;
+    border: 2px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    cursor: pointer;
+    transition: var(--cortex-transition);
+}
+
+.cortex-radio-label:hover,
+.cortex-checkbox-label:hover {
+    border-color: var(--cortex-primary);
+    background: #f0f7fb;
+}
+
+.cortex-radio-label input[type="radio"],
+.cortex-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.cortex-radio-text,
+.cortex-checkbox-text {
+    flex: 1;
+}
+
+/* Dropdown */
+.cortex-dropdown {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    font-size: 1em;
+    background: #fff;
+    cursor: pointer;
+    transition: var(--cortex-transition);
+}
+
+.cortex-dropdown:focus {
+    outline: none;
+    border-color: var(--cortex-primary);
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+/* Text Inputs */
+.cortex-text-answer,
+.cortex-short-text-answer,
+.cortex-number-answer,
+.cortex-date-answer,
+.cortex-blank-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    font-size: 1em;
+    font-family: inherit;
+    transition: var(--cortex-transition);
+}
+
+.cortex-text-answer:focus,
+.cortex-short-text-answer:focus,
+.cortex-number-answer:focus,
+.cortex-date-answer:focus,
+.cortex-blank-input:focus {
+    outline: none;
+    border-color: var(--cortex-primary);
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.cortex-text-answer {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* Banner (Informational) */
+.cortex-banner-content {
+    background: #fff8dc;
+    border-left: 4px solid var(--cortex-warning);
+    padding: 1rem;
+    border-radius: var(--cortex-radius);
+}
+
+/* Fill in the Blank */
+.cortex-fill-blank-container {
+    line-height: 2;
+}
+
+.cortex-blank-input {
+    display: inline-block;
+    width: auto;
+    min-width: 100px;
+    padding: 0.25rem 0.5rem;
+    margin: 0 0.25rem;
+    height: auto;
+    border-width: 0 0 2px 0;
+    border-radius: 0;
+}
+
+/* Sequence Question */
+.cortex-sequence-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.cortex-sequence-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 1px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    margin-bottom: 0.5rem;
+    cursor: grab;
+    transition: var(--cortex-transition);
+}
+
+.cortex-sequence-item:active {
+    cursor: grabbing;
+}
+
+.cortex-sequence-item .dashicons {
+    color: var(--cortex-text-light);
+}
+
+.cortex-sortable-placeholder {
+    height: 44px;
+    background: #f0f0f0;
+    border: 2px dashed var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    margin-bottom: 0.5rem;
+}
+
+/* Matching Question */
+.cortex-matching-container {
+    background: #fff;
+    padding: 1rem;
+    border-radius: var(--cortex-radius);
+}
+
+.cortex-matching-instructions {
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: var(--cortex-text-light);
+}
+
+.cortex-matching-pairs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cortex-matching-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--cortex-background);
+    border-radius: var(--cortex-radius);
+}
+
+.cortex-matching-left {
+    font-weight: 500;
+}
+
+.cortex-matching-arrow {
+    color: var(--cortex-primary);
+    font-size: 1.2em;
+}
+
+.cortex-matching-right select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+}
+
+/* Hint Section */
+.cortex-question-hint {
+    margin-top: 1rem;
+    margin-left: 2rem;
+}
+
+.cortex-hint-toggle {
+    background: transparent;
+    border: 1px dashed var(--cortex-border);
+    padding: 0.5rem 1rem;
+    border-radius: var(--cortex-radius);
+    cursor: pointer;
+    color: var(--cortex-primary);
+    font-size: 0.9em;
+    transition: var(--cortex-transition);
+}
+
+.cortex-hint-toggle:hover {
+    background: var(--cortex-background);
+}
+
+.cortex-hint-content {
+    margin-top: 0.5rem;
+    padding: 1rem;
+    background: #fffacd;
+    border-left: 4px solid var(--cortex-warning);
+    border-radius: var(--cortex-radius);
+}
+
+/* Comment Section */
+.cortex-question-comment {
+    margin-top: 1rem;
+    margin-left: 2rem;
+}
+
+.cortex-comment-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.cortex-comment-field {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    font-family: inherit;
+    resize: vertical;
+}
+
+/* ==========================================================================
+   Lead Capture
+   ========================================================================== */
+
+.cortex-lead-capture {
+    background: var(--cortex-background);
+    border: 2px solid var(--cortex-primary);
+    border-radius: var(--cortex-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.cortex-lead-title {
+    margin: 0 0 1rem;
+    color: var(--cortex-primary);
+}
+
+.cortex-lead-fields {
+    display: grid;
+    gap: 1rem;
+}
+
+.cortex-field label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.cortex-field input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    font-size: 1em;
+}
+
+.cortex-consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.cortex-consent-label input[type="checkbox"] {
+    margin-top: 0.25rem;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.required {
+    color: var(--cortex-error);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.cortex-button-primary,
+.cortex-submit-quiz {
+    background: var(--cortex-primary);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: var(--cortex-radius);
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--cortex-transition);
+}
+
+.cortex-button-primary:hover,
+.cortex-submit-quiz:hover {
+    background: var(--cortex-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--cortex-shadow);
+}
+
+.cortex-button-primary:active,
+.cortex-submit-quiz:active {
+    transform: translateY(0);
+}
+
+.cortex-quiz-submit-section {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--cortex-border);
+}
+
+/* ==========================================================================
+   Results
+   ========================================================================== */
+
+.cortex-quiz-results {
+    background: #fff;
+    border: 1px solid var(--cortex-border);
+    border-radius: var(--cortex-radius);
+    padding: 2rem;
+    box-shadow: var(--cortex-shadow);
+    text-align: center;
+}
+
+.cortex-results-header h2 {
+    margin: 0 0 2rem;
+    color: var(--cortex-primary);
+}
+
+.cortex-results-score {
+    margin: 2rem 0;
+}
+
+.cortex-score-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cortex-primary) 0%, var(--cortex-primary-hover) 100%);
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.cortex-score-value {
+    font-size: 2.5em;
+    font-weight: bold;
+}
+
+.cortex-score-details {
+    color: var(--cortex-text-light);
+    font-size: 1.1em;
+}
+
+.cortex-results-message {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border-radius: var(--cortex-radius);
+    font-size: 1.1em;
+}
+
+.cortex-tier-high {
+    background: #d4edda;
+    border: 2px solid var(--cortex-success);
+    color: #155724;
+}
+
+.cortex-tier-medium {
+    background: #e7f4ff;
+    border: 2px solid var(--cortex-primary);
+    color: #004085;
+}
+
+.cortex-tier-low {
+    background: #fff3cd;
+    border: 2px solid var(--cortex-warning);
+    color: #856404;
+}
+
+.cortex-results-share {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--cortex-border);
+}
+
+.cortex-share-label {
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.cortex-share-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.cortex-share-twitter,
+.cortex-share-facebook {
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--cortex-radius);
+    text-decoration: none;
+    font-weight: bold;
+    transition: var(--cortex-transition);
+}
+
+.cortex-share-twitter {
+    background: #1da1f2;
+    color: #fff;
+}
+
+.cortex-share-facebook {
+    background: #4267b2;
+    color: #fff;
+}
+
+.cortex-share-twitter:hover,
+.cortex-share-facebook:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Error/Messages
+   ========================================================================== */
+
+.cortex-error,
+.cortex-quiz-unavailable,
+.cortex-quiz-login-required,
+.cortex-quiz-forbidden,
+.cortex-quiz-limit-reached {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: var(--cortex-radius);
+    padding: 1rem;
+    color: #721c24;
+    margin: 1rem 0;
+}
+
+.cortex-quiz-login-required a.cortex-button {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--cortex-primary);
+    color: #fff;
+    text-decoration: none;
+    border-radius: var(--cortex-radius);
+}
+
+/* ==========================================================================
+   Code Block
+   ========================================================================== */
+
+.cortex-code-block {
+    position: relative;
+    margin: 1.5rem 0;
+    background: #282c34;
+    border-radius: var(--cortex-radius);
+    overflow: hidden;
+}
+
+.cortex-code-copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--cortex-radius);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: var(--cortex-transition);
+}
+
+.cortex-code-copy:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.cortex-code-block pre {
+    margin: 0;
+    padding: 2.5rem 1rem 1rem;
+    overflow-x: auto;
+}
+
+.cortex-code-block code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    line-height: 1.5;
+    color: #abb2bf;
+}
+
+/* ==========================================================================
+   Markdown Content
+   ========================================================================== */
+
+.cortex-markdown-content {
+    line-height: 1.6;
+    color: var(--cortex-text);
+}
+
+.cortex-markdown-content h1,
+.cortex-markdown-content h2,
+.cortex-markdown-content h3,
+.cortex-markdown-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--cortex-primary);
+}
+
+.cortex-markdown-content code {
+    background: var(--cortex-background);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.cortex-markdown-content pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 1rem;
+    border-radius: var(--cortex-radius);
+    overflow-x: auto;
+}
+
+.cortex-markdown-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.cortex-markdown-content th,
+.cortex-markdown-content td {
+    border: 1px solid var(--cortex-border);
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.cortex-markdown-content th {
+    background: var(--cortex-background);
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .cortex-quiz-container {
+        padding: 0 0.5rem;
+    }
+
+    .cortex-quiz-welcome,
+    .cortex-quiz-form {
+        padding: 1rem;
+    }
+
+    .cortex-quiz-title {
+        font-size: 1.5em;
+    }
+
+    .cortex-question {
+        padding: 1rem;
+    }
+
+    .cortex-question-body {
+        margin-left: 0;
+    }
+
+    .cortex-matching-row {
+        grid-template-columns: 1fr;
+    }
+
+    .cortex-matching-arrow {
+        display: none;
+    }
+
+    .cortex-score-circle {
+        width: 120px;
+        height: 120px;
+    }
+
+    .cortex-score-value {
+        font-size: 2em;
+    }
+
+    .cortex-share-buttons {
+        flex-direction: column;
+    }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.cortex-quiz-container :focus-visible {
+    outline: 3px solid var(--cortex-primary);
+    outline-offset: 2px;
+}
+
+/* Screen reader only text */
+.cortex-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Loading state */
+.cortex-quiz-form.cortex-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Print styles */
+@media print {
+
+    .cortex-hint-toggle,
+    .cortex-quiz-submit-section,
+    .cortex-results-share {
+        display: none;
+    }
+}

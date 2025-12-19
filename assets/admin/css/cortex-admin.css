@@ -1,0 +1,54 @@
+/* Place at: cortex/assets/admin/css/cortex-admin.css */
+
+/* Basic modal */
+.cortex-modal {
+    position: fixed;
+    z-index: 99999;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cortex-modal-inner {
+    background: #fff;
+    padding: 20px;
+    width: 800px;
+    max-width: 95%;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+.cortex-modal-inner h2 {
+    margin-top: 0;
+}
+
+.cortex-modal .form-table th {
+    width: 160px;
+    vertical-align: top;
+    padding-top: 10px;
+}
+
+/* Inputs */
+.cortex-modal input[type="text"],
+.cortex-modal input[type="url"],
+.cortex-modal textarea,
+.cortex-modal select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Button spacing */
+.cortex-add-question-btn {
+    margin-right: 8px;
+}
+
+/* Small responsive fix */
+@media (max-width: 600px) {
+    .cortex-modal-inner { width: 96%; padding: 12px; }
+    .cortex-modal .form-table th { width: 120px; }
+}

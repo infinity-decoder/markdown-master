@@ -1,0 +1,394 @@
+/* Cortex - Modern Admin UI */
+:root {
+    --cortex-primary: #6366f1;
+    --cortex-primary-hover: #4f46e5;
+    --cortex-secondary: #0ea5e9;
+    --cortex-success: #22c55e;
+    --cortex-danger: #ef4444;
+    --cortex-warning: #f59e0b;
+    --cortex-dark: #1e293b;
+    --cortex-light: #f8fafc;
+    --cortex-gray: #64748b;
+    --cortex-border: #e2e8f0;
+    --cortex-card-bg: #ffffff;
+    --cortex-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --cortex-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.cortex-admin-wrap {
+    margin: 20px 20px 0 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.cortex-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: var(--cortex-shadow);
+}
+
+.cortex-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--cortex-dark);
+}
+
+/* Dashboard Cards */
+.cortex-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.cortex-dashboard-card {
+    background: var(--cortex-card-bg);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: var(--cortex-shadow);
+    transition: all 0.3s ease;
+    border: 1px solid var(--cortex-border);
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+}
+
+.cortex-dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--cortex-shadow-lg);
+    border-color: var(--cortex-primary);
+}
+
+.cortex-card-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--cortex-light);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: var(--cortex-primary);
+}
+
+.cortex-dashboard-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--cortex-dark);
+}
+
+.cortex-dashboard-card p {
+    margin: 0 0 20px 0;
+    color: var(--cortex-gray);
+    line-height: 1.5;
+    flex-grow: 1;
+}
+
+.cortex-card-footer {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--cortex-primary);
+}
+
+.cortex-card-footer span {
+    margin-right: 8px;
+}
+
+/* Button Styles */
+.cortex-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+}
+
+.cortex-btn-primary {
+    background: var(--cortex-primary);
+    color: #fff;
+}
+
+.cortex-btn-primary:hover {
+    background: var(--cortex-primary-hover);
+    color: #fff;
+}
+
+/* Table Style */
+.cortex-table-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--cortex-shadow);
+    overflow: hidden;
+}
+
+.cortex-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cortex-table th {
+    background: var(--cortex-light);
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--cortex-dark);
+    border-bottom: 1px solid var(--cortex-border);
+}
+
+.cortex-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--cortex-border);
+    color: var(--cortex-gray);
+}
+
+/* Snippet Listing & Cards */
+.cortex-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.cortex-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--cortex-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.cortex-card:hover {
+    box-shadow: var(--cortex-shadow);
+    border-color: var(--cortex-primary);
+}
+
+.cortex-card-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--cortex-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.cortex-card-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.cortex-card-title a {
+    color: var(--cortex-dark);
+    text-decoration: none;
+}
+
+.cortex-card-id,
+.cortex-card-tag {
+    font-size: 11px;
+    background: var(--cortex-light);
+    color: var(--cortex-gray);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.cortex-card-body {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.cortex-card-preview {
+    font-size: 14px;
+    color: var(--cortex-gray);
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.cortex-shortcode-box {
+    display: flex;
+    align-items: center;
+    background: var(--cortex-light);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--cortex-border);
+}
+
+.cortex-shortcode-box code {
+    flex-grow: 1;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    background: transparent;
+    padding: 0;
+}
+
+.cortex-copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--cortex-primary);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.cortex-copy-btn:hover {
+    color: var(--cortex-primary-hover);
+}
+
+.cortex-card-footer {
+    padding: 15px 20px;
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cortex-card-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.cortex-action-link {
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--cortex-gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cortex-action-link:hover {
+    color: var(--cortex-primary);
+}
+
+.cortex-action-link.delete:hover {
+    color: var(--cortex-danger);
+}
+
+.cortex-card-date {
+    font-size: 12px;
+    color: var(--cortex-gray);
+}
+
+/* Forms & Editor */
+.cortex-form-card {
+    padding: 40px;
+}
+
+.cortex-form-group {
+    margin-bottom: 25px;
+}
+
+.cortex-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--cortex-dark);
+}
+
+.cortex-input,
+.cortex-textarea {
+    width: 100%;
+    border: 1px solid var(--cortex-border);
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.cortex-input:focus,
+.cortex-textarea:focus {
+    border-color: var(--cortex-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.cortex-code-editor {
+    font-family: 'Consolas', 'Monaco', 'Courier New', Courier, monospace;
+    background: #f8fafc;
+}
+
+.cortex-row {
+    display: flex;
+    gap: 20px;
+}
+
+.cortex-col-6 {
+    flex: 1;
+}
+
+.cortex-checkbox-wrapper {
+    padding: 12px 0;
+}
+
+/* Empty States & Filters */
+.cortex-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px dashed var(--cortex-border);
+    margin-top: 20px;
+}
+
+.cortex-empty-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.cortex-filter-bar {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--cortex-border);
+    margin-top: 20px;
+}
+
+.cortex-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.cortex-search-wrapper .dashicons {
+    position: absolute;
+    left: 12px;
+    color: var(--cortex-gray);
+}
+
+.cortex-search-wrapper input {
+    padding-left: 40px !important;
+    width: 300px;
+}
+
+.cortex-btn-secondary {
+    background: #fff;
+    border: 1px solid var(--cortex-border);
+    color: var(--cortex-dark);
+}
+
+.cortex-btn-secondary:hover {
+    background: var(--cortex-light);
+}
+
+.cortex-btn-large {
+    padding: 12px 30px;
+    font-size: 16px;
+}
