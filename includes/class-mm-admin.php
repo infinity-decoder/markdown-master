@@ -230,6 +230,16 @@ class MM_Admin {
             26
         );
 
+        // Submenu: Dashboard (re-registering same slug for first item usually hides the duplicate)
+        add_submenu_page(
+            'markdown-master',
+            __( 'Dashboard', 'markdown-master' ),
+            __( 'Dashboard', 'markdown-master' ),
+            'manage_options',
+            'markdown-master',
+            [ $this, 'render_dashboard' ]
+        );
+
         add_submenu_page(
             'markdown-master',
             __( 'Quizzes', 'markdown-master' ),
@@ -246,6 +256,42 @@ class MM_Admin {
             'manage_options',
             'mm_results',
             [ $this, 'render_results_page' ]
+        );
+
+        add_submenu_page(
+            'markdown-master',
+            __( 'Question Banks', 'markdown-master' ),
+            __( 'Question Banks', 'markdown-master' ),
+            'manage_options',
+            'mm_question_banks',
+            [ $this, 'render_question_banks_page' ]
+        );
+
+        add_submenu_page(
+            'markdown-master',
+            __( 'Markdown Snippets', 'markdown-master' ),
+            __( 'Markdown Snippets', 'markdown-master' ),
+            'manage_options',
+            'mm_markdown_snippets',
+            [ $this, 'render_markdown_snippets_page' ]
+        );
+
+        add_submenu_page(
+            'markdown-master',
+            __( 'Code Snippets', 'markdown-master' ),
+            __( 'Code Snippets', 'markdown-master' ),
+            'manage_options',
+            'mm_code_snippets',
+            [ $this, 'render_code_snippets_page' ]
+        );
+
+        add_submenu_page(
+            'markdown-master',
+            __( 'Lead Captures', 'markdown-master' ),
+            __( 'Lead Captures', 'markdown-master' ),
+            'manage_options',
+            'mm_lead_captures',
+            [ $this, 'render_lead_captures_page' ]
         );
 
         add_submenu_page(
@@ -303,17 +349,21 @@ class MM_Admin {
      * ------------------------ */
 
     public function render_dashboard() {
-        ?>
-        <div class="wrap">
-            <h1><?php esc_html_e( 'Markdown Master Dashboard', 'markdown-master' ); ?></h1>
-            <p><?php esc_html_e( 'Manage quizzes, questions, results and settings.', 'markdown-master' ); ?></p>
-            <p>
-                <a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=mm_quizzes' ) ); ?>"><?php esc_html_e( 'Manage Quizzes', 'markdown-master' ); ?></a>
-                <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=mm_results' ) ); ?>"><?php esc_html_e( 'View Results', 'markdown-master' ); ?></a>
-                <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=mm_settings' ) ); ?>"><?php esc_html_e( 'Settings', 'markdown-master' ); ?></a>
-            </p>
-        </div>
-        <?php
+        if ( file_exists( MM_ADMIN . 'mm-admin-dashboard.php' ) ) {
+            include MM_ADMIN . 'mm-admin-dashboard.php';
+        } else {
+            ?>
+            <div class="wrap">
+                <h1><?php esc_html_e( 'Markdown Master Dashboard', 'markdown-master' ); ?></h1>
+                <p><?php esc_html_e( 'Manage quizzes, questions, results and settings.', 'markdown-master' ); ?></p>
+                <p>
+                    <a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=mm_quizzes' ) ); ?>"><?php esc_html_e( 'Manage Quizzes', 'markdown-master' ); ?></a>
+                    <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=mm_results' ) ); ?>"><?php esc_html_e( 'View Results', 'markdown-master' ); ?></a>
+                    <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=mm_settings' ) ); ?>"><?php esc_html_e( 'Settings', 'markdown-master' ); ?></a>
+                </p>
+            </div>
+            <?php
+        }
     }
 
     public function render_quizzes_page() {
@@ -569,8 +619,9 @@ class MM_Admin {
         // We keep settings simple until Settings class is used (Phase 6)
         $opts = get_option( 'mm_settings', array() );
         ?>
-        <div class="wrap">
-            <h1><?php esc_html_e( 'Markdown Master Settings', 'markdown-master' ); ?></h1>
+        <div class="wrap mm-admin-wrap">
+            <h1 class="wp-heading-inline"><?php esc_html_e( 'Markdown Master Settings', 'markdown-master' ); ?></h1>
+            <hr class="wp-header-end">
             <form method="post" action="options.php">
                 <?php
                 settings_fields( 'mm_settings_group' );
@@ -578,6 +629,353 @@ class MM_Admin {
                 submit_button();
                 ?>
             </form>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render Question Banks page
+     */
+    public function render_question_banks_page() {
+        if ( ! class_exists( 'MM_Question_Bank' ) ) {
+             require_once MM_INCLUDES . 'class-mm-question-bank.php';
+        }
+        $bank_model = new MM_Question_Bank();
+        $banks = $bank_model->get_all_banks();
+
+        ?>
+        <div class="wrap mm-admin-dashboard">
+            <div class="mm-dashboard-header">
+                <h1><?php esc_html_e( 'Question Banks', 'markdown-master' ); ?></h1>
+                <a href="#" class="mm-btn mm-btn-primary mm-btn-large" id="mm-add-bank">
+                    <?php esc_html_e( '+ Create Bank', 'markdown-master' ); ?>
+                </a>
+            </div>
+
+            <?php if ( empty( $banks ) ) : ?>
+                <div class="mm-empty-state">
+                    <div class="mm-empty-icon">📦</div>
+                    <h2 class="mm-empty-title"><?php esc_html_e( 'No Question Banks Yet', 'markdown-master' ); ?></h2>
+                    <p class="mm-empty-description">
+                        <?php esc_html_e( 'Question banks let you create reusable question libraries that can be imported into multiple quizzes.', 'markdown-master' ); ?>
+                    </p>
+                    <a href="#" class="mm-btn mm-btn-primary" id="mm-create-first-bank">
+                        <?php esc_html_e( 'Create Your First Bank', 'markdown-master' ); ?>
+                    </a>
+                </div>
+            <?php else : ?>
+                <div class="mm-filter-bar">
+                    <input type="search" placeholder="<?php esc_attr_e( 'Search banks...', 'markdown-master' ); ?>">
+                    <select>
+                        <option value="all"><?php esc_html_e( 'All Banks', 'markdown-master' ); ?></option>
+                        <option value="recent"><?php esc_html_e( 'Recently Updated', 'markdown-master' ); ?></option>
+                    </select>
+                </div>
+
+                <div class="mm-cards-grid">
+                    <?php foreach ( $banks as $bank ) : ?>
+                        <div class="mm-card" data-status="published">
+                            <div class="mm-card-header">
+                                <div>
+                                    <h3 class="mm-card-title">
+                                        <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_question_banks', 'action' => 'edit', 'id' => $bank['id'] ), admin_url( 'admin.php' ) ) ); ?>">
+                                            <?php echo esc_html( $bank['name'] ); ?>
+                                        </a>
+                                    </h3>
+                                </div>
+                            </div>
+
+                            <div class="mm-card-body">
+                                <?php if ( ! empty( $bank['description'] ) ) : ?>
+                                    <p class="mm-card-description"><?php echo esc_html( $bank['description'] ); ?></p>
+                                <?php endif; ?>
+
+                                <div class="mm-card-meta">
+                                    <div class="mm-meta-item">
+                                        <span class="mm-meta-icon">📝</span>
+                                        <span class="mm-meta-value"><?php echo esc_html( $bank['question_count'] ); ?></span>
+                                        <?php esc_html_e( 'questions', 'markdown-master' ); ?>
+                                    </div>
+                                    <div class="mm-meta-item">
+                                        <span class="mm-meta-icon">📅</span>
+                                        <?php echo isset($bank['created_at']) ? esc_html( human_time_diff( strtotime( $bank['created_at'] ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__('ago', 'markdown-master') : ''; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mm-card-footer">
+                                <div class="mm-card-actions">
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_question_banks', 'action' => 'edit', 'id' => $bank['id'] ), admin_url( 'admin.php' ) ) ); ?>" class="mm-card-action primary">
+                                        <?php esc_html_e( 'Manage', 'markdown-master' ); ?>
+                                    </a>
+                                    <a href="#" class="mm-card-action secondary" onclick="return confirm('<?php esc_attr_e( 'Delete this bank?', 'markdown-master' ); ?>')">
+                                        <?php esc_html_e( 'Delete', 'markdown-master' ); ?>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render Markdown Snippets page
+     */
+    public function render_markdown_snippets_page() {
+        if ( ! class_exists( 'MM_Markdown_Snippets' ) ) {
+             require_once MM_INCLUDES . 'class-mm-markdown-snippets.php';
+        }
+        $snippet_model = new MM_Markdown_Snippets();
+        $snippets = $snippet_model->get_all_snippets();
+
+        ?>
+        <div class="wrap mm-admin-dashboard">
+            <div class="mm-dashboard-header">
+                <h1><?php esc_html_e( 'Markdown Snippets', 'markdown-master' ); ?></h1>
+                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' =>'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary mm-btn-large">
+                    <?php esc_html_e( '+ New Snippet', 'markdown-master' ); ?>
+                </a>
+            </div>
+
+            <?php if ( empty( $snippets ) ) : ?>
+                <div class="mm-empty-state">
+                    <div class="mm-empty-icon">📄</div>
+                    <h2 class="mm-empty-title"><?php esc_html_e( 'No Markdown Snippets Yet', 'markdown-master' ); ?></h2>
+                    <p class="mm-empty-description">
+                        <?php esc_html_e( 'Create reusable markdown content that can be embedded anywhere with a shortcode.', 'markdown-master' ); ?>
+                    </p>
+                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary">
+                        <?php esc_html_e( 'Create First Snippet', 'markdown-master' ); ?>
+                    </a>
+                </div>
+            <?php else : ?>
+                <div class="mm-filter-bar">
+                    <input type="search" placeholder="<?php esc_attr_e( 'Search snippets...', 'markdown-master' ); ?>">
+                </div>
+
+                <div class="mm-cards-grid">
+                    <?php foreach ( $snippets as $snippet ) : ?>
+                        <div class="mm-card">
+                            <div class="mm-card-header">
+                                <h3 class="mm-card-title">
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'edit', 'id' => $snippet['id'] ), admin_url( 'admin.php' ) ) ); ?>">
+                                        <?php echo esc_html( $snippet['title'] ); ?>
+                                    </a>
+                                </h3>
+                                <span class="mm-card-uuid">#<?php echo esc_html( $snippet['id'] ); ?></span>
+                            </div>
+
+                            <div class="mm-card-body">
+                                <p class="mm-card-description">
+                                    <?php echo esc_html( wp_trim_words( $snippet['content'], 20 ) ); ?>
+                                </p>
+
+                                <div class="mm-card-meta">
+                                    <div class="mm-meta-item">
+                                        <span class="mm-meta-icon">🔖</span>
+                                        <code>[mm-markdown id="<?php echo esc_attr( $snippet['id'] ); ?>"]</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mm-card-footer">
+                                <div class="mm-card-actions">
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'edit', 'id' => $snippet['id'] ), admin_url( 'admin.php' ) ) ); ?>" class="mm-card-action primary">
+                                        <?php esc_html_e( 'Edit', 'markdown-master' ); ?>
+                                    </a>
+                                    <button class="mm-card-action secondary mm-copy-uuid" data-uuid="[mm-markdown id=&quot;<?php echo esc_attr( $snippet['id'] ); ?>&quot;]">
+                                        <?php esc_html_e( 'Copy Shortcode', 'markdown-master' ); ?>
+                                    </button>
+                                </div>
+                                <span class="mm-card-date">
+                                    <?php echo isset($snippet['created_at']) ? esc_html( human_time_diff( strtotime( $snippet['created_at'] ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__('ago', 'markdown-master') : ''; ?>
+                                </span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render Code Snippets page
+     */
+    public function render_code_snippets_page() {
+        if ( ! class_exists( 'MM_Snippet' ) ) {
+             require_once MM_INCLUDES . 'class-mm-snippet.php';
+        }
+        $snippet_model = new MM_Snippet();
+        $snippets = $snippet_model->get_all_snippets();
+
+        ?>
+        <div class="wrap mm-admin-dashboard">
+            <div class="mm-dashboard-header">
+                <h1><?php esc_html_e( 'Code Snippets', 'markdown-master' ); ?></h1>
+                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' =>'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary mm-btn-large">
+                    <?php esc_html_e( '+ New Snippet', 'markdown-master' ); ?>
+                </a>
+            </div>
+
+            <?php if ( empty( $snippets ) ) : ?>
+                <div class="mm-empty-state">
+                    <div class="mm-empty-icon">💻</div>
+                    <h2 class="mm-empty-title"><?php esc_html_e( 'No Code Snippets Yet', 'markdown-master' ); ?></h2>
+                    <p class="mm-empty-description">
+                        <?php esc_html_e( 'Save and embed syntax-highlighted code snippets anywhere using a simple shortcode.', 'markdown-master' ); ?>
+                    </p>
+                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary">
+                        <?php esc_html_e( 'Create First Snippet', 'markdown-master' ); ?>
+                    </a>
+                </div>
+            <?php else : ?>
+                <div class="mm-filter-bar">
+                    <input type="search" placeholder="<?php esc_attr_e( 'Search snippets...', 'markdown-master' ); ?>">
+                </div>
+
+                <div class="mm-cards-grid">
+                    <?php foreach ( $snippets as $snippet ) : ?>
+                        <div class="mm-card">
+                            <div class="mm-card-header">
+                                <h3 class="mm-card-title">
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'edit', 'id' => $snippet->id ), admin_url( 'admin.php' ) ) ); ?>">
+                                        <?php echo esc_html( $snippet->title ); ?>
+                                    </a>
+                                </h3>
+                                <span class="mm-card-tag"><?php echo esc_html( strtoupper( $snippet->language ) ); ?></span>
+                            </div>
+
+                            <div class="mm-card-body">
+                                <pre class="mm-code-preview"><code><?php echo esc_html( wp_trim_words( $snippet->code, 15 ) ); ?></code></pre>
+
+                                <div class="mm-card-meta">
+                                    <div class="mm-meta-item">
+                                        <span class="mm-meta-icon">🔖</span>
+                                        <code>[mm-code id="<?php echo esc_attr( $snippet->id ); ?>"]</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mm-card-footer">
+                                <div class="mm-card-actions">
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'edit', 'id' => $snippet->id ), admin_url( 'admin.php' ) ) ); ?>" class="mm-card-action primary">
+                                        <?php esc_html_e( 'Edit', 'markdown-master' ); ?>
+                                    </a>
+                                    <button class="mm-card-action secondary mm-copy-uuid" data-uuid="[mm-code id=&quot;<?php echo esc_attr( $snippet->id ); ?>&quot;]">
+                                        <?php esc_html_e( 'Copy Shortcode', 'markdown-master' ); ?>
+                                    </button>
+                                </div>
+                                <span class="mm-card-date">
+                                    <?php echo isset($snippet->created_at) ? esc_html( human_time_diff( strtotime( $snippet->created_at ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__('ago', 'markdown-master') : ''; ?>
+                                </span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+    public function render_lead_captures_page() {
+        if ( ! class_exists( 'MM_Lead_Capture' ) ) {
+             require_once MM_INCLUDES . 'class-mm-lead-capture.php';
+        }
+        global $wpdb;
+
+        // Get stats
+        $table_leads = $wpdb->prefix . 'mm_lead_captures';
+        $total_leads = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_leads}" );
+        $leads_today = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_leads} WHERE DATE(created_at) = CURDATE()" );
+        $leads_week = $wpdb->get_var( "SELECT COUNT(*) FROM {$table_leads} WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)" );
+
+        // Get recent leads
+        $recent_leads = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT l.*, q.title as quiz_title 
+                 FROM {$table_leads} l
+                 LEFT JOIN {$wpdb->prefix}mm_quizzes q ON l.quiz_id = q.id
+                 ORDER BY l.created_at DESC 
+                 LIMIT 50"
+            ),
+            ARRAY_A
+        );
+
+        ?>
+        <div class="wrap mm-admin-dashboard">
+            <div class="mm-dashboard-header">
+                <h1><?php esc_html_e( 'Lead Captures', 'markdown-master' ); ?></h1>
+                <a href="#" class="mm-btn mm-btn-primary" id="mm-export-leads-csv">
+                    <?php esc_html_e( 'Export CSV', 'markdown-master' ); ?>
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="mm-stats-grid">
+                <div class="mm-stat-card primary">
+                    <div class="mm-stat-header">
+                        <div>
+                            <div class="mm-stat-value"><?php echo esc_html( number_format( $total_leads ) ); ?></div>
+                            <div class="mm-stat-label"><?php esc_html_e( 'Total Leads', 'markdown-master' ); ?></div>
+                        </div>
+                        <div class="mm-stat-icon">👥</div>
+                    </div>
+                </div>
+
+                <div class="mm-stat-card success">
+                    <div class="mm-stat-header">
+                        <div>
+                            <div class="mm-stat-value"><?php echo esc_html( number_format( $leads_today ) ); ?></div>
+                            <div class="mm-stat-label"><?php esc_html_e( 'Today', 'markdown-master' ); ?></div>
+                        </div>
+                        <div class="mm-stat-icon">📈</div>
+                    </div>
+                </div>
+
+                <div class="mm-stat-card warning">
+                    <div class="mm-stat-header">
+                        <div>
+                            <div class="mm-stat-value"><?php echo esc_html( number_format( $leads_week ) ); ?></div>
+                            <div class="mm-stat-label"><?php esc_html_e( 'This Week', 'markdown-master' ); ?></div>
+                        </div>
+                        <div class="mm-stat-icon">📊</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leads Table -->
+            <div class="mm-form-container">
+                <h2><?php esc_html_e( 'Recent Captures', 'markdown-master' ); ?></h2>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e( 'Name', 'markdown-master' ); ?></th>
+                            <th><?php esc_html_e( 'Email', 'markdown-master' ); ?></th>
+                            <th><?php esc_html_e( 'Quiz', 'markdown-master' ); ?></th>
+                            <th><?php esc_html_e( 'Date', 'markdown-master' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ( ! empty( $recent_leads ) ) : ?>
+                            <?php foreach ( $recent_leads as $lead ) : ?>
+                                <tr>
+                                    <td><?php echo esc_html( $lead['name'] ); ?></td>
+                                    <td><a href="mailto:<?php echo esc_attr( $lead['email'] ); ?>"><?php echo esc_html( $lead['email'] ); ?></a></td>
+                                    <td><?php echo esc_html( $lead['quiz_title'] ); ?></td>
+                                    <td><?php echo esc_html( human_time_diff( strtotime( $lead['created_at'] ), current_time( 'timestamp' ) ) ); ?> <?php esc_html_e( 'ago', 'markdown-master' ); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr>
+                                <td colspan="4" style="text-align:center;"><?php esc_html_e( 'No leads captured yet.', 'markdown-master' ); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <?php
     }

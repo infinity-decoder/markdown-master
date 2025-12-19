@@ -100,7 +100,6 @@ $core_classes = array(
     'class-mm-snippet.php',
     'class-mm-math-renderer.php',
     'class-mm-highlighter.php',
-    'class-mm-admin-enhanced.php',
 );
 
 foreach ( $core_classes as $class_file ) {
