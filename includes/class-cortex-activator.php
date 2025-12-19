@@ -317,6 +317,79 @@ class Cortex_Activator {
             KEY idx_created_at (created_at)
         ) {$charset_collate};";
 
+        /**
+         * TABLE 10: cortex_enrollments
+         */
+        $table_enrollments = $wpdb->prefix . 'cortex_enrollments';
+        $sql_enrollments = "CREATE TABLE {$table_enrollments} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id BIGINT UNSIGNED NOT NULL,
+            course_id BIGINT UNSIGNED NOT NULL,
+            enrolled_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            status VARCHAR(20) NOT NULL DEFAULT 'active',
+            progress_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+            completed_at DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY  (id),
+            KEY idx_user_id (user_id),
+            KEY idx_course_id (course_id),
+            KEY idx_user_course (user_id, course_id)
+        ) {$charset_collate};";
+
+        /**
+         * TABLE 11: cortex_course_progress
+         */
+        $table_progress = $wpdb->prefix . 'cortex_course_progress';
+        $sql_progress = "CREATE TABLE {$table_progress} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id BIGINT UNSIGNED NOT NULL,
+            course_id BIGINT UNSIGNED NOT NULL,
+            lesson_id BIGINT UNSIGNED NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'completed',
+            completed_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY  (id),
+            KEY idx_user_course (user_id, course_id),
+            KEY idx_lesson (user_id, lesson_id)
+        ) {$charset_collate};";
+
+        /**
+         * TABLE 12: cortex_submissions
+         */
+        $table_submissions = $wpdb->prefix . 'cortex_submissions';
+        $sql_submissions = "CREATE TABLE {$table_submissions} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            assignment_id BIGINT UNSIGNED NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL,
+            course_id BIGINT UNSIGNED NOT NULL,
+            content LONGTEXT NULL,
+            attachments LONGTEXT NULL,
+            grade DECIMAL(5,2) NULL,
+            instructor_feedback LONGTEXT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            updated_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY  (id),
+            KEY idx_assignment_user (assignment_id, user_id),
+            KEY idx_course_id (course_id),
+            KEY idx_status (status)
+        ) {$charset_collate};";
+
+        /**
+         * TABLE 13: cortex_user_certificates
+         */
+        $table_user_certs = $wpdb->prefix . 'cortex_user_certificates';
+        $sql_user_certs = "CREATE TABLE {$table_user_certs} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id BIGINT UNSIGNED NOT NULL,
+            course_id BIGINT UNSIGNED NOT NULL,
+            template_id BIGINT UNSIGNED NOT NULL,
+            unique_hash VARCHAR(60) NOT NULL DEFAULT '',
+            issued_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY  (id),
+            KEY idx_user_course (user_id, course_id),
+            UNIQUE KEY idx_hash (unique_hash)
+        ) {$charset_collate};";
+
         // Execute all table creations/upgrades
         dbDelta( $sql_quizzes );
         dbDelta( $sql_questions );
@@ -327,5 +400,9 @@ class Cortex_Activator {
         dbDelta( $sql_lead_captures );
         dbDelta( $sql_markdown_snippets );
         dbDelta( $sql_code_snippets );
+        dbDelta( $sql_enrollments );
+        dbDelta( $sql_progress );
+        dbDelta( $sql_submissions );
+        dbDelta( $sql_user_certs );
     }
 }
