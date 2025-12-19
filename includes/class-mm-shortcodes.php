@@ -339,7 +339,14 @@ class MM_Shortcodes {
         <div class="mm-question" data-question-id="<?php echo esc_attr( $question_id ); ?>" data-type="<?php echo esc_attr( $type ); ?>">
             <div class="mm-question-header">
                 <span class="mm-question-number"><?php echo esc_html( $question_number ); ?>.</span>
-                <div class="mm-question-text"><?php echo wp_kses_post( $question['question_text'] ); ?></div>
+                <div class="mm-question-text">
+                    <?php 
+                    // If it's a fill_blank question, we handle the text rendering inside its own method
+                    if ( $type !== 'fill_blank' ) {
+                        echo wp_kses_post( $question['question_text'] ); 
+                    }
+                    ?>
+                </div>
             </div>
 
             <div class="mm-question-body">
@@ -531,23 +538,22 @@ class MM_Shortcodes {
      */
     protected function render_fill_blank_question( $question ) {
         $question_id = absint( $question['id'] );
-        $metadata = is_array( $question['metadata'] ) ? $question['metadata'] : array();
-        $blank_count = isset( $metadata['blank_count'] ) ? absint( $metadata['blank_count'] ) : 1;
+        $text = $question['question_text'];
+        
+        // Count blanks and replace them with inputs
+        $blank_index = 0;
+        $rendered_text = preg_replace_callback( '/\[blank\]/', function( $matches ) use ( $question_id, &$blank_index ) {
+            $input = sprintf(
+                '<input type="text" name="answers[%1$d][%2$d]" class="mm-blank-input" required aria-label="%3$s">',
+                esc_attr( $question_id ),
+                $blank_index,
+                esc_attr( sprintf( __( 'Blank %d', 'markdown-master' ), $blank_index + 1 ) )
+            );
+            $blank_index++;
+            return $input;
+        }, wp_kses_post( $text ) );
 
-        ob_start();
-        ?>
-        <div class="mm-fill-blank-inputs">
-            <?php for ( $i = 0; $i < $blank_count; $i++ ) : ?>
-                <div class="mm-blank-input-group">
-                    <label for="blank_<?php echo esc_attr( $question_id . '_' . $i ); ?>">
-                        <?php echo esc_html( sprintf( __( 'Blank %d:', 'markdown-master' ), $i + 1 ) ); ?>
-                    </label>
-                    <input type="text" name="answers[<?php echo esc_attr( $question_id ); ?>][<?php echo esc_attr( $i ); ?>]" id="blank_<?php echo esc_attr( $question_id . '_' . $i ); ?>" class="mm-blank-input" required>
-                </div>
-            <?php endfor; ?>
-        </div>
-        <?php
-        return ob_get_clean();
+        return '<div class="mm-fill-blank-container">' . $rendered_text . '</div>';
     }
 
     /**
@@ -556,27 +562,27 @@ class MM_Shortcodes {
     protected function render_matching_question( $question ) {
         $question_id = absint( $question['id'] );
         $metadata = is_array( $question['metadata'] ) ? $question['metadata'] : array();
-        $left_items = isset( $metadata['left_items'] ) ? $metadata['left_items'] : array();
-        $right_items = isset( $metadata['right_items'] ) ? $metadata['right_items'] : array();
+        $pairs = isset( $metadata['pairs'] ) ? $metadata['pairs'] : array();
+        
+        $left_items = array_keys( $pairs );
+        $right_items = array_values( $pairs );
+        
+        // Randomize right items for the dropdown
+        $shuffled_right = $right_items;
+        shuffle( $shuffled_right );
 
         ob_start();
         ?>
         <div class="mm-matching-container">
-            <div class="mm-matching-instructions">
-                <p><?php esc_html_e( 'Match each item on the left with one on the right:', 'markdown-master' ); ?></p>
-            </div>
             <div class="mm-matching-pairs">
-                <?php foreach ( $left_items as $left_index => $left_item ) : ?>
+                <?php foreach ( $left_items as $index => $left_item ) : ?>
                     <div class="mm-matching-row">
-                        <div class="mm-matching-left">
-                            <?php echo esc_html( $left_item ); ?>
-                        </div>
-                        <div class="mm-matching-arrow">→</div>
+                        <div class="mm-matching-left"><?php echo esc_html( $left_item ); ?></div>
                         <div class="mm-matching-right">
-                            <select name="answers[<?php echo esc_attr( $question_id ); ?>][<?php echo esc_attr( $left_index ); ?>]" required>
-                                <option value="">-- <?php esc_html_e( 'Select', 'markdown-master' ); ?> --</option>
-                                <?php foreach ( $right_items as $right_index => $right_item ) : ?>
-                                    <option value="<?php echo esc_attr( $right_index ); ?>"><?php echo esc_html( $right_item ); ?></option>
+                            <select name="answers[<?php echo esc_attr( $question_id ); ?>][<?php echo esc_attr( $index ); ?>]" required>
+                                <option value="">-- <?php esc_html_e( 'Select Match', 'markdown-master' ); ?> --</option>
+                                <?php foreach ( $shuffled_right as $right_item ) : ?>
+                                    <option value="<?php echo esc_attr( $right_item ); ?>"><?php echo esc_html( $right_item ); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -589,26 +595,86 @@ class MM_Shortcodes {
     }
 
     /**
+     * Render sequence question
+     */
+    protected function render_sequence_question( $question ) {
+        $question_id = absint( $question['id'] );
+        $options = is_array( $question['options'] ) ? $question['options'] : array();
+        
+        // Shuffle options for the user to reorder
+        $shuffled_options = $options;
+        shuffle( $shuffled_options );
+
+        ob_start();
+        ?>
+        <div class="mm-sequence-container" data-question-id="<?php echo esc_attr( $question_id ); ?>">
+            <p class="description"><?php esc_html_e( 'Drag and drop items into the correct order:', 'markdown-master' ); ?></p>
+            <ul class="mm-sequence-list mm-sortable">
+                <?php foreach ( $shuffled_options as $index => $option ) : ?>
+                    <li class="mm-sequence-item" data-value="<?php echo esc_attr( $option ); ?>">
+                        <span class="dashicons dashicons-menu"></span>
+                        <?php echo esc_html( $option ); ?>
+                        <input type="hidden" name="answers[<?php echo esc_attr( $question_id ); ?>][]" value="<?php echo esc_attr( $option ); ?>">
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
      * Render lead capture form
+     * 
+     * @param array $quiz Quiz data
+     * @return string HTML
      */
     protected function render_lead_capture_form( $quiz ) {
+        $lead_fields = isset( $quiz['lead_fields'] ) ? $quiz['lead_fields'] : array();
+        
+        // Default fields if none defined
+        if ( empty( $lead_fields ) ) {
+            $lead_fields = array(
+                array( 'id' => 'name', 'label' => __( 'Name', 'markdown-master' ), 'type' => 'text', 'required' => true ),
+                array( 'id' => 'email', 'label' => __( 'Email', 'markdown-master' ), 'type' => 'email', 'required' => true ),
+            );
+        }
+
         ob_start();
         ?>
         <div class="mm-lead-capture">
             <h3 class="mm-lead-title"><?php esc_html_e( 'Your Information', 'markdown-master' ); ?></h3>
             <div class="mm-lead-fields">
-                <div class="mm-field">
-                    <label for="lead_name"><?php esc_html_e( 'Name', 'markdown-master' ); ?> <span class="required">*</span></label>
-                    <input type="text" name="lead_name" id="lead_name" required>
-                </div>
-                <div class="mm-field">
-                    <label for="lead_email"><?php esc_html_e( 'Email', 'markdown-master' ); ?> <span class="required">*</span></label>
-                    <input type="email" name="lead_email" id="lead_email" required>
-                </div>
-                <div class="mm-field">
-                    <label for="lead_phone"><?php esc_html_e( 'Phone (optional)', 'markdown-master' ); ?></label>
-                    <input type="tel" name="lead_phone" id="lead_phone">
-                </div>
+                <?php foreach ( $lead_fields as $field ) : ?>
+                    <?php
+                    $id = esc_attr( $field['id'] );
+                    $label = esc_html( $field['label'] );
+                    $type = esc_attr( $field['type'] );
+                    $required = ! empty( $field['required'] ) ? 'required' : '';
+                    ?>
+                    <div class="mm-field">
+                        <label for="lead_<?php echo $id; ?>"><?php echo $label; ?> <?php if ( $required ) echo '<span class="required">*</span>'; ?></label>
+                        <?php if ( $type === 'dropdown' ) : ?>
+                            <select name="lead[<?php echo $id; ?>]" id="lead_<?php echo $id; ?>" <?php echo $required; ?>>
+                                <option value=""><?php esc_html_e( '-- Select --', 'markdown-master' ); ?></option>
+                                <?php foreach ( $field['options'] as $opt ) : ?>
+                                    <option value="<?php echo esc_attr( $opt ); ?>"><?php echo esc_html( $opt ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php elseif ( $type === 'checkbox' ) : ?>
+                             <div class="mm-checkbox-group">
+                                <?php foreach ( $field['options'] as $opt ) : ?>
+                                    <label><input type="checkbox" name="lead[<?php echo $id; ?>][]" value="<?php echo esc_attr( $opt ); ?>"> <?php echo esc_html( $opt ); ?></label>
+                                <?php endforeach; ?>
+                             </div>
+                        <?php elseif ( $type === 'textarea' ) : ?>
+                            <textarea name="lead[<?php echo $id; ?>]" id="lead_<?php echo $id; ?>" <?php echo $required; ?>></textarea>
+                        <?php else : ?>
+                            <input type="<?php echo $type; ?>" name="lead[<?php echo $id; ?>]" id="lead_<?php echo $id; ?>" <?php echo $required; ?>>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+
                 <div class="mm-field mm-consent-field">
                     <label class="mm-consent-label">
                         <input type="checkbox" name="lead_consent" value="1" required>
@@ -685,12 +751,15 @@ class MM_Shortcodes {
             return; // No consent, skip lead capture
         }
 
-        $lead_data = array(
-            'name'          => isset( $_POST['lead_name'] ) ? sanitize_text_field( wp_unslash( $_POST['lead_name'] ) ) : '',
-            'email'         => isset( $_POST['lead_email'] ) ? sanitize_email( wp_unslash( $_POST['lead_email'] ) ) : '',
-            'phone'         => isset( $_POST['lead_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['lead_phone'] ) ) : '',
-            'consent_given' => 1,
-        );
+        $raw_lead = isset( $_POST['lead'] ) ? (array) $_POST['lead'] : array();
+        $lead_data = array();
+        
+        // Extract standard fields for potential separate storage if needed,
+        // but primarily we wrap everything in custom_fields for dynamic support.
+        $lead_data['name']  = isset( $raw_lead['name'] ) ? sanitize_text_field( $raw_lead['name'] ) : '';
+        $lead_data['email'] = isset( $raw_lead['email'] ) ? sanitize_email( $raw_lead['email'] ) : '';
+        $lead_data['consent_given'] = 1;
+        $lead_data['custom_fields'] = $raw_lead; // All lead fields are stored here
 
         $lead_capture = new MM_Lead_Capture();
         $lead_capture->capture_lead( $quiz_id, $attempt_id, $lead_data );
@@ -774,7 +843,7 @@ class MM_Shortcodes {
      */
     protected function enqueue_quiz_assets() {
         wp_enqueue_style( 'mm-quiz', MM_PLUGIN_URL . 'assets/css/mm-public.css', array(), MM_VERSION );
-        wp_enqueue_script( 'mm-quiz', MM_PLUGIN_URL . 'assets/js/mm-public.js', array( 'jquery' ), MM_VERSION, true );
+        wp_enqueue_script( 'mm-quiz', MM_PLUGIN_URL . 'assets/js/mm-public.js', array( 'jquery', 'jquery-ui-sortable' ), MM_VERSION, true );
 
         // Localize script
         wp_localize_script( 'mm-quiz', 'mmQuiz', array(

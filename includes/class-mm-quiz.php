@@ -44,6 +44,7 @@ class MM_Quiz {
         'banner',      // Informational only (no answer)
         'fill_blank',  // Fill in the blank(s)
         'matching',    // Match two lists
+        'sequence',    // Order items correctly
     );
 
     public function __construct() {
@@ -155,8 +156,10 @@ class MM_Quiz {
             'title'               => isset( $data['title'] ) ? $data['title'] : '',
             'description'         => isset( $data['description'] ) ? $data['description'] : '',
             'settings'            => isset( $data['settings'] ) ? $this->encode_data( $data['settings'] ) : '{}',
+            'lead_fields'         => isset( $data['lead_fields'] ) ? $this->encode_data( $data['lead_fields'] ) : '[]',
             'time_limit'          => isset( $data['time_limit'] ) ? absint( $data['time_limit'] ) : 0,
-            'attempts_allowed'    => isset( $data['attempts_allowed'] ) ? absint( $data['attempts_allowed'] ) : 0,  'show_answers'        => isset( $data['show_answers'] ) ? $this->normalize_bool( $data['show_answers'] ) : 0,
+            'attempts_allowed'    => isset( $data['attempts_allowed'] ) ? absint( $data['attempts_allowed'] ) : 0,
+            'show_answers'        => isset( $data['show_answers'] ) ? $this->normalize_bool( $data['show_answers'] ) : 0,
             'randomize_questions' => isset( $data['randomize_questions'] ) ? $this->normalize_bool( $data['randomize_questions'] ) : 0,
             'randomize_answers'   => isset( $data['randomize_answers'] ) ? $this->normalize_bool( $data['randomize_answers'] ) : 0,
             'questions_per_page'  => isset( $data['questions_per_page'] ) ? absint( $data['questions_per_page'] ) : 0,
@@ -176,7 +179,7 @@ class MM_Quiz {
         );
 
         $formats = array(
-            '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d',
+            '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d',
             '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%f', '%d',
             '%d', '%s', '%s'
         );
@@ -213,7 +216,7 @@ class MM_Quiz {
         $formats = array();
 
         $allowed_fields = array(
-            'title', 'description', 'settings', 'time_limit', 'attempts_allowed',
+            'title', 'description', 'settings', 'lead_fields', 'time_limit', 'attempts_allowed',
             'show_answers', 'randomize_questions', 'randomize_answers', 'questions_per_page',
             'show_welcome_screen', 'welcome_content', 'scheduled_start', 'scheduled_end',
             'require_login', 'required_role', 'max_total_attempts', 'max_user_attempts',
@@ -222,7 +225,7 @@ class MM_Quiz {
 
         foreach ( $allowed_fields as $field ) {
             if ( array_key_exists( $field, $data ) ) {
-                if ( in_array( $field, array( 'settings' ), true ) ) {
+                if ( in_array( $field, array( 'settings', 'lead_fields' ), true ) ) {
                     $fields[ $field ] = $this->encode_data( $data[ $field ] );
                     $formats[] = '%s';
                 } elseif ( in_array( $field, array( 'pass_percentage' ), true ) ) {
@@ -374,6 +377,7 @@ class MM_Quiz {
 
         // Decode JSON fields
         $row['settings'] = $this->decode_data( $row['settings'] );
+        $row['lead_fields'] = $this->decode_data( $row['lead_fields'] );
 
         if ( $with_questions ) {
             $row['questions'] = $this->get_questions( $row['id'] );
@@ -433,6 +437,36 @@ class MM_Quiz {
         }
 
         return $rows;
+    }
+
+    /**
+     * Get a single question by ID
+     * 
+     * @param int $question_id
+     * @return array|null
+     */
+    public function get_question( $question_id ) {
+        $question_id = absint( $question_id );
+        if ( $question_id <= 0 ) {
+            return null;
+        }
+
+        $row = $this->db->get_row(
+            $this->db->prepare( "SELECT * FROM {$this->table_questions} WHERE id = %d", $question_id ),
+            ARRAY_A
+        );
+
+        if ( ! $row ) {
+            return null;
+        }
+
+        // Decode JSON fields
+        $row['options'] = $this->decode_data( $row['options'] );
+        $row['correct_answer'] = $this->decode_data( $row['correct_answer'] );
+        $row['metadata'] = $this->decode_data( $row['metadata'] );
+        $row['type'] = $this->clean_question_type( $row['type'] );
+
+        return $row;
     }
 
     /**
@@ -775,7 +809,7 @@ class MM_Quiz {
 
             // Score based on question type
             switch ( $type ) {
-                case' radio':
+                case 'radio':
                 case 'dropdown':
                     // Single choice - exact match
                     $is_correct = ( $given === $correct || ( is_array( $correct ) && in_array( $given, $correct, true ) ) );
@@ -844,15 +878,16 @@ class MM_Quiz {
                     break;
 
                 case 'fill_blank':
-                    // Fill in the blank - metadata contains blank positions and correct answers
+                    // Fill in the blank
                     $metadata = $q['metadata'];
-                    $blanks = isset( $metadata['blanks'] ) ? $metadata['blanks'] : array();
+                    // Use correct_answer array if possible, fallback to metadata blanks
+                    $correct_arr = is_array($q['correct_answer']) ? $q['correct_answer'] : (isset($metadata['blanks']) ? $metadata['blanks'] : array());
                     $given_arr = is_array( $given ) ? $given : array( $given );
                     
                     $correct_count = 0;
-                    $total_blanks = count( $blanks );
+                    $total_blanks = count( $correct_arr );
                     
-                    foreach ( $blanks as $idx => $blank_correct ) {
+                    foreach ( $correct_arr as $idx => $blank_correct ) {
                         $given_blank = isset( $given_arr[ $idx ] ) ? trim( $given_arr[ $idx ] ) : '';
                         if ( mb_strtolower( $given_blank ) === mb_strtolower( trim( $blank_correct ) ) ) {
                             $correct_count++;
@@ -883,6 +918,27 @@ class MM_Quiz {
                     if ( $total_pairs > 0 ) {
                         $row['points_awarded'] = $points * ( $correct_count / $total_pairs );
                         $row['is_correct'] = ( $correct_count === $total_pairs );
+                    }
+                    break;
+                
+                case 'sequence':
+                    // Ordered list - items must be in correct order
+                    $metadata = $q['metadata'];
+                    $correct_order = isset( $metadata['order'] ) ? $metadata['order'] : array();
+                    $given_arr = is_array( $given ) ? $given : array();
+                    
+                    $correct_count = 0;
+                    $total_items = count( $correct_order );
+                    
+                    foreach ( $correct_order as $idx => $val ) {
+                        if ( isset( $given_arr[ $idx ] ) && $given_arr[ $idx ] === $val ) {
+                            $correct_count++;
+                        }
+                    }
+                    
+                    if ( $total_items > 0 ) {
+                        $row['points_awarded'] = $points * ( $correct_count / $total_items );
+                        $row['is_correct'] = ( $correct_count === $total_items );
                     }
                     break;
 

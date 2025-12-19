@@ -275,18 +275,25 @@ class MM_Admin {
 
         // CSS
         wp_enqueue_style( 'mm-admin-css', MM_PLUGIN_URL . 'assets/css/mm-admin.css', array(), MM_VERSION );
+        wp_enqueue_style( 'mm-admin-modern', MM_PLUGIN_URL . 'assets/css/mm-admin-modern.css', array(), MM_VERSION );
 
-        // JS (depends on jQuery)
-        wp_enqueue_script( 'mm-admin-js', MM_PLUGIN_URL . 'assets/js/mm-admin.js', array( 'jquery', 'jquery-ui-sortable' ), MM_VERSION, true );
+        // JS (depends on jQuery, Underscore, wp-util)
+        wp_enqueue_script( 'mm-admin-js', MM_PLUGIN_URL . 'assets/js/mm-admin.js', array( 'jquery', 'jquery-ui-sortable', 'underscore', 'wp-util' ), MM_VERSION, true );
 
         // Localize
         wp_localize_script( 'mm-admin-js', 'MM_Admin', array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'mm_admin_nonce' ),
+            'quiz_id'  => isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0,
             'strings'  => array(
                 'confirm_delete_question' => __( 'Delete this question? This cannot be undone.', 'markdown-master' ),
                 'add_question'            => __( 'Add Question', 'markdown-master' ),
                 'update_question'         => __( 'Update Question', 'markdown-master' ),
+                'remove_option'           => __( 'Remove Option', 'markdown-master' ),
+                'remove_pair'             => __( 'Remove Pair', 'markdown-master' ),
+                'saving'                  => __( 'Saving...', 'markdown-master' ),
+                'saved'                   => __( 'Saved', 'markdown-master' ),
+                'error'                   => __( 'Error saving', 'markdown-master' ),
             ),
         ) );
     }
@@ -358,62 +365,23 @@ class MM_Admin {
             'id' => 0,
             'title' => '',
             'description' => '',
-            'shuffle' => 0,
+            'randomize_questions' => 0,
+            'require_login' => 0,
+            'show_answers' => 0,
             'time_limit' => 0,
             'attempts_allowed' => 0,
-            'show_answers' => 0,
+            'enable_lead_capture' => 0,
+            'lead_fields' => array(),
         );
+
         if ( $id > 0 ) {
             $q = $this->model->get_quiz( $id );
             if ( $q ) {
-                $quiz = wp_parse_args( $q, $quiz );
-                // ensure scalar fields exist
-                $quiz['shuffle'] = isset( $quiz['shuffle'] ) ? (int) $quiz['shuffle'] : 0;
-                $quiz['time_limit'] = isset( $quiz['time_limit'] ) ? (int) $quiz['time_limit'] : 0;
-                $quiz['attempts_allowed'] = isset( $quiz['attempts_allowed'] ) ? (int) $quiz['attempts_allowed'] : 0;
-                $quiz['show_answers'] = isset( $quiz['show_answers'] ) ? (int) $quiz['show_answers'] : 0;
+                $quiz = array_merge( $quiz, $q );
             }
         }
-        ?>
-        <div class="wrap">
-            <h1><?php echo $id ? esc_html__( 'Edit Quiz', 'markdown-master' ) : esc_html__( 'Create New Quiz', 'markdown-master' ); ?></h1>
 
-            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                <?php wp_nonce_field( 'mm_save_quiz_nonce', 'mm_save_quiz_nonce_field' ); ?>
-                <input type="hidden" name="action" value="mm_save_quiz">
-                <input type="hidden" name="id" value="<?php echo esc_attr( $quiz['id'] ); ?>"/>
-
-                <table class="form-table">
-                    <tr>
-                        <th><label for="title"><?php esc_html_e( 'Title', 'markdown-master' ); ?></label></th>
-                        <td><input type="text" id="title" name="title" value="<?php echo esc_attr( $quiz['title'] ); ?>" class="regular-text" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="description"><?php esc_html_e( 'Description', 'markdown-master' ); ?></label></th>
-                        <td><textarea id="description" name="description" rows="4" class="large-text"><?php echo esc_textarea( $quiz['description'] ); ?></textarea></td>
-                    </tr>
-                    <tr>
-                        <th><?php esc_html_e( 'Shuffle Questions', 'markdown-master' ); ?></th>
-                        <td><input type="checkbox" name="shuffle" value="1" <?php checked( 1, intval( $quiz['shuffle'] ), true ); ?>></td>
-                    </tr>
-                    <tr>
-                        <th><?php esc_html_e( 'Time Limit (minutes)', 'markdown-master' ); ?></th>
-                        <td><input type="number" name="time_limit" value="<?php echo esc_attr( intval( $quiz['time_limit'] ) ); ?>" min="0"></td>
-                    </tr>
-                    <tr>
-                        <th><?php esc_html_e( 'Attempts Allowed', 'markdown-master' ); ?></th>
-                        <td><input type="number" name="attempts_allowed" value="<?php echo esc_attr( intval( $quiz['attempts_allowed'] ) ); ?>" min="0"></td>
-                    </tr>
-                    <tr>
-                        <th><?php esc_html_e( 'Show Answers', 'markdown-master' ); ?></th>
-                        <td><input type="checkbox" name="show_answers" value="1" <?php checked( 1, intval( $quiz['show_answers'] ), true ); ?>></td>
-                    </tr>
-                </table>
-
-                <?php submit_button( $id ? __( 'Update Quiz', 'markdown-master' ) : __( 'Create Quiz', 'markdown-master' ) ); ?>
-            </form>
-        </div>
-        <?php
+        include MM_ADMIN . 'mm-admin-quiz-form.php';
     }
 
     /**
@@ -644,78 +612,34 @@ class MM_Admin {
             wp_send_json_error( 'invalid_quiz' );
         }
 
-        $qtext = isset( $_POST['question_text'] ) ? wp_kses_post( wp_unslash( $_POST['question_text'] ) ) : '';
-        $type  = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'single';
-        $points = isset( $_POST['points'] ) ? intval( $_POST['points'] ) : 1;
-        $image = isset( $_POST['image'] ) ? esc_url_raw( $_POST['image'] ) : null;
+        // Use security layer for initial sanitization
+        $raw_data = $_POST;
+        $sanitized_data = MM_Security::sanitize_question_input( $raw_data );
 
-        // Options: either 'options_text' (lines) or options[] form
-        $options = array();
-        if ( ! empty( $_POST['options_text'] ) ) {
-            $raw = wp_unslash( $_POST['options_text'] );
-            $lines = preg_split( "/\r\n|\n|\r/", $raw );
-            foreach ( $lines as $ln ) {
-                $ln = trim( $ln );
-                if ( $ln !== '' ) $options[] = wp_kses_post( $ln );
-            }
-        } elseif ( isset( $_POST['options'] ) && is_array( $_POST['options'] ) ) {
-            foreach ( $_POST['options'] as $o ) {
-                $o = trim( wp_unslash( $o ) );
-                if ( $o !== '' ) $options[] = wp_kses_post( $o );
-            }
+        // Extract complex fields if they exist as arrays in $_POST (bypass sanitize_question_input's JSON-only handling)
+        if ( isset( $raw_data['options'] ) && is_array( $raw_data['options'] ) ) {
+             $sanitized_data['options'] = array_map( 'wp_kses_post', $raw_data['options'] );
         }
 
-        // Correct answer value — accept either indexes (1-based) or exact text
-        $correct_raw = isset( $_POST['correct_answer_text'] ) ? trim( wp_unslash( $_POST['correct_answer_text'] ) ) : '';
-        $correct = null;
-        if ( $correct_raw !== '' ) {
-            // if numeric indexes provided
-            if ( preg_match( '/^[\d,\s]+$/', $correct_raw ) ) {
-                $parts = array_filter( array_map( 'trim', explode( ',', $correct_raw ) ) );
-                $vals = array();
-                foreach ( $parts as $p ) {
-                    $idx = intval( $p );
-                    if ( $idx > 0 && isset( $options[ $idx - 1 ] ) ) {
-                        $vals[] = $options[ $idx - 1 ];
-                    }
-                }
-                $correct = ( count( $vals ) === 1 ) ? $vals[0] : $vals;
+        if ( isset( $raw_data['correct_answer'] ) ) {
+            if ( is_array( $raw_data['correct_answer'] ) ) {
+                $sanitized_data['correct_answer'] = array_map( 'sanitize_text_field', $raw_data['correct_answer'] );
             } else {
-                // match by exact option text(s)
-                $parts = array_filter( array_map( 'trim', explode( ',', $correct_raw ) ) );
-                if ( count( $parts ) === 1 ) {
-                    $correct = $parts[0];
-                } else {
-                    $correct = $parts;
-                }
+                $sanitized_data['correct_answer'] = sanitize_text_field( $raw_data['correct_answer'] );
             }
         }
 
-        $question_data = array(
-            'question_text'  => $qtext,
-            'type'           => $type,
-            'options'        => $options,
-            'correct_answer' => $correct,
-            'points'         => $points,
-            'image'          => $image,
-        );
+        if ( isset( $raw_data['metadata'] ) && is_array( $raw_data['metadata'] ) ) {
+            // metadata should be sanitized recursively
+            $sanitized_data['metadata'] = $this->sanitize_metadata( $raw_data['metadata'] );
+        }
 
-        $qid = $this->model->add_question( $quiz_id, $question_data );
+        $qid = $this->model->add_question( $quiz_id, $sanitized_data );
         if ( ! $qid ) {
             wp_send_json_error( 'insert_failed' );
         }
 
-        $newq = $this->model->get_questions( $quiz_id );
-        // return single question data
-        $single = null;
-        foreach ( $newq as $q ) {
-            if ( intval( $q['id'] ) === intval( $qid ) ) {
-                $single = $q;
-                break;
-            }
-        }
-
-        wp_send_json_success( $single );
+        wp_send_json_success( $this->model->get_question( $qid ) );
     }
 
     public function ajax_update_question() {
@@ -729,70 +653,48 @@ class MM_Admin {
             wp_send_json_error( 'invalid_question' );
         }
 
-        $qtext = isset( $_POST['question_text'] ) ? wp_kses_post( wp_unslash( $_POST['question_text'] ) ) : '';
-        $type  = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'single';
-        $points = isset( $_POST['points'] ) ? intval( $_POST['points'] ) : 1;
-        $image = isset( $_POST['image'] ) ? esc_url_raw( $_POST['image'] ) : null;
+        // Use security layer
+        $raw_data = $_POST;
+        $sanitized_data = MM_Security::sanitize_question_input( $raw_data );
 
-        $options = array();
-        if ( ! empty( $_POST['options_text'] ) ) {
-            $raw = wp_unslash( $_POST['options_text'] );
-            $lines = preg_split( "/\r\n|\n|\r/", $raw );
-            foreach ( $lines as $ln ) {
-                $ln = trim( $ln );
-                if ( $ln !== '' ) $options[] = wp_kses_post( $ln );
-            }
-        } elseif ( isset( $_POST['options'] ) && is_array( $_POST['options'] ) ) {
-            foreach ( $_POST['options'] as $o ) {
-                $o = trim( wp_unslash( $o ) );
-                if ( $o !== '' ) $options[] = wp_kses_post( $o );
-            }
+        // Extract complex fields
+        if ( isset( $raw_data['options'] ) && is_array( $raw_data['options'] ) ) {
+             $sanitized_data['options'] = array_map( 'wp_kses_post', $raw_data['options'] );
         }
 
-        $correct_raw = isset( $_POST['correct_answer_text'] ) ? trim( wp_unslash( $_POST['correct_answer_text'] ) ) : '';
-        $correct = null;
-        if ( $correct_raw !== '' ) {
-            if ( preg_match( '/^[\d,\s]+$/', $correct_raw ) ) {
-                $parts = array_filter( array_map( 'trim', explode( ',', $correct_raw ) ) );
-                $vals = array();
-                foreach ( $parts as $p ) {
-                    $idx = intval( $p );
-                    if ( $idx > 0 && isset( $options[ $idx - 1 ] ) ) {
-                        $vals[] = $options[ $idx - 1 ];
-                    }
-                }
-                $correct = ( count( $vals ) === 1 ) ? $vals[0] : $vals;
+        if ( isset( $raw_data['correct_answer'] ) ) {
+            if ( is_array( $raw_data['correct_answer'] ) ) {
+                $sanitized_data['correct_answer'] = array_map( 'sanitize_text_field', $raw_data['correct_answer'] );
             } else {
-                $parts = array_filter( array_map( 'trim', explode( ',', $correct_raw ) ) );
-                $correct = ( count( $parts ) === 1 ) ? $parts[0] : $parts;
+                $sanitized_data['correct_answer'] = sanitize_text_field( $raw_data['correct_answer'] );
             }
         }
 
-        $data = array(
-            'question_text'  => $qtext,
-            'type'           => $type,
-            'options'        => $options,
-            'correct_answer' => $correct,
-            'points'         => $points,
-            'image'          => $image,
-        );
+        if ( isset( $raw_data['metadata'] ) && is_array( $raw_data['metadata'] ) ) {
+            $sanitized_data['metadata'] = $this->sanitize_metadata( $raw_data['metadata'] );
+        }
 
-        $ok = $this->model->update_question( $question_id, $data );
+        $ok = $this->model->update_question( $question_id, $sanitized_data );
         if ( ! $ok ) {
             wp_send_json_error( 'update_failed' );
         }
 
-        $quiz_row = $this->db_get_quiz_id_by_question( $question_id );
-        $quiz_id = $quiz_row ? intval( $quiz_row ) : 0;
-        $updated = $this->model->get_questions( $quiz_id );
-        $single = null;
-        foreach ( $updated as $q ) {
-            if ( intval( $q['id'] ) === $question_id ) {
-                $single = $q;
-                break;
-            }
+        wp_send_json_success( $this->model->get_question( $question_id ) );
+    }
+
+    /**
+     * Recursive metadata sanitization
+     */
+    protected function sanitize_metadata( $data ) {
+        if ( ! is_array( $data ) ) {
+            return wp_kses_post( $data );
         }
-        wp_send_json_success( $single );
+        
+        $clean = array();
+        foreach ( $data as $key => $value ) {
+            $clean[ sanitize_text_field( $key ) ] = $this->sanitize_metadata( $value );
+        }
+        return $clean;
     }
 
     protected function db_get_quiz_id_by_question( $question_id ) {
@@ -826,46 +728,55 @@ class MM_Admin {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( __( 'Unauthorized', 'markdown-master' ) );
         }
-        check_admin_referer( 'mm_save_quiz_nonce', 'mm_save_quiz_nonce_field' );
+        
+        // Match the nonce name from the form
+        check_admin_referer( 'mm_save_quiz', 'mm_quiz_nonce' );
 
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
-        $title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
-        $description = isset( $_POST['description'] ) ? wp_kses_post( wp_unslash( $_POST['description'] ) ) : '';
-        $shuffle = isset( $_POST['shuffle'] ) ? 1 : 0;
-        $time_limit = isset( $_POST['time_limit'] ) ? intval( $_POST['time_limit'] ) : 0;
-        $attempts_allowed = isset( $_POST['attempts_allowed'] ) ? intval( $_POST['attempts_allowed'] ) : 0;
-        $show_answers = isset( $_POST['show_answers'] ) ? 1 : 0;
+        $id = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
+        
+        // Collect and sanitize data
+        $data = array(
+            'title'               => isset( $_POST['quiz_title'] ) ? sanitize_text_field( wp_unslash( $_POST['quiz_title'] ) ) : '',
+            'description'         => isset( $_POST['quiz_description'] ) ? wp_kses_post( wp_unslash( $_POST['quiz_description'] ) ) : '',
+            'time_limit'          => isset( $_POST['quiz_timer'] ) ? intval( $_POST['quiz_timer'] ) : 0,
+            'attempts_allowed'    => isset( $_POST['quiz_attempt_limit'] ) ? intval( $_POST['quiz_attempt_limit'] ) : 0,
+            'randomize_questions' => isset( $_POST['randomize_questions'] ) ? 1 : 0,
+            'require_login'       => isset( $_POST['require_login'] ) ? 1 : 0,
+            'show_answers'        => isset( $_POST['show_answers'] ) ? 1 : 0,
+            'enable_lead_capture' => isset( $_POST['enable_lead_capture'] ) ? 1 : 0,
+        );
 
-        $settings = array(
-            'shuffle' => $shuffle,
-            'time_limit' => $time_limit,
-            'attempts_allowed' => $attempts_allowed,
-            'show_answers' => $show_answers,
+        // Handle dynamic lead fields
+        $lead_fields = array();
+        if ( isset( $_POST['lead_fields'] ) && is_array( $_POST['lead_fields'] ) ) {
+            foreach ( $_POST['lead_fields'] as $field ) {
+                if ( ! empty( $field['label'] ) ) {
+                    $label = sanitize_text_field( $field['label'] );
+                    $lead_fields[] = array(
+                        'id'       => sanitize_title( $label ), // Generate a slug-like ID
+                        'label'    => $label,
+                        'type'     => sanitize_text_field( $field['type'] ?? 'text' ),
+                        'required' => isset( $field['required'] ) ? 1 : 0,
+                    );
+                }
+            }
+        }
+        $data['lead_fields'] = $lead_fields;
+
+        // Settings array for extra flexibility
+        $data['settings'] = array(
+            'last_saved_by' => get_current_user_id(),
         );
 
         if ( $id > 0 ) {
-            $this->model->update_quiz( $id, array(
-                'title' => $title,
-                'description' => $description,
-                'settings' => $settings,
-                'shuffle' => $shuffle,
-                'time_limit' => $time_limit,
-                'attempts_allowed' => $attempts_allowed,
-                'show_answers' => $show_answers,
-            ) );
+            $this->model->update_quiz( $id, $data );
+            $msg = __( 'Quiz updated successfully.', 'markdown-master' );
         } else {
-            $this->model->create_quiz( array(
-                'title' => $title,
-                'description' => $description,
-                'settings' => $settings,
-                'shuffle' => $shuffle,
-                'time_limit' => $time_limit,
-                'attempts_allowed' => $attempts_allowed,
-                'show_answers' => $show_answers,
-            ) );
+            $id = $this->model->create_quiz( $data );
+            $msg = __( 'Quiz created successfully.', 'markdown-master' );
         }
 
-        wp_safe_redirect( admin_url( 'admin.php?page=mm_quizzes&mm_msg=' . urlencode( __( 'Quiz saved.', 'markdown-master' ) ) ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=mm_quizzes&action=edit&id=' . $id . '&mm_msg=' . urlencode( $msg ) ) );
         exit;
     }
 

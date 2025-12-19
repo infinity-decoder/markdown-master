@@ -240,7 +240,7 @@ class MM_Security {
         // Question type - strict whitelist
         $allowed_types = array(
             'radio', 'checkbox', 'dropdown', 'text', 'short_text',
-            'number', 'date', 'banner', 'fill_blank', 'matching'
+            'number', 'date', 'banner', 'fill_blank', 'matching', 'sequence'
         );
         
         if ( isset( $data['type'] ) ) {
@@ -299,10 +299,15 @@ class MM_Security {
         
         if ( isset( $data['metadata'] ) ) {
             if ( is_array( $data['metadata'] ) ) {
-                $clean['metadata'] = wp_json_encode( $data['metadata'] );
+                // Deep sanitize metadata based on type or just use standard sanitization
+                $clean['metadata'] = wp_json_encode( self::sanitize_answers_array( $data['metadata'] ) );
             } elseif ( is_string( $data['metadata'] ) ) {
                 $decoded = json_decode( $data['metadata'], true );
-                $clean['metadata'] = ( null !== $decoded ) ? wp_json_encode( $decoded ) : '{}';
+                if ( is_array( $decoded ) ) {
+                    $clean['metadata'] = wp_json_encode( self::sanitize_answers_array( $decoded ) );
+                } else {
+                    $clean['metadata'] = '{}';
+                }
             }
         }
         

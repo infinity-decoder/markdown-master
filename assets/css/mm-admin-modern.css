@@ -1,0 +1,157 @@
+/* Markdown Master - Modern Admin UI */
+:root {
+    --mm-primary: #6366f1;
+    --mm-primary-hover: #4f46e5;
+    --mm-secondary: #0ea5e9;
+    --mm-success: #22c55e;
+    --mm-danger: #ef4444;
+    --mm-warning: #f59e0b;
+    --mm-dark: #1e293b;
+    --mm-light: #f8fafc;
+    --mm-gray: #64748b;
+    --mm-border: #e2e8f0;
+    --mm-card-bg: #ffffff;
+    --mm-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --mm-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.mm-admin-wrap {
+    margin: 20px 20px 0 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.mm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: var(--mm-shadow);
+}
+
+.mm-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--mm-dark);
+}
+
+/* Dashboard Cards */
+.mm-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.mm-dashboard-card {
+    background: var(--mm-card-bg);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: var(--mm-shadow);
+    transition: all 0.3s ease;
+    border: 1px solid var(--mm-border);
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+}
+
+.mm-dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--mm-shadow-lg);
+    border-color: var(--mm-primary);
+}
+
+.mm-card-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--mm-light);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: var(--mm-primary);
+}
+
+.mm-dashboard-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--mm-dark);
+}
+
+.mm-dashboard-card p {
+    margin: 0 0 20px 0;
+    color: var(--mm-gray);
+    line-height: 1.5;
+    flex-grow: 1;
+}
+
+.mm-card-footer {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--mm-primary);
+}
+
+.mm-card-footer span {
+    margin-right: 8px;
+}
+
+/* Button Styles */
+.mm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+}
+
+.mm-btn-primary {
+    background: var(--mm-primary);
+    color: #fff;
+}
+
+.mm-btn-primary:hover {
+    background: var(--mm-primary-hover);
+    color: #fff;
+}
+
+/* Table Style */
+.mm-table-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--mm-shadow);
+    overflow: hidden;
+}
+
+.mm-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mm-table th {
+    background: var(--mm-light);
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--mm-dark);
+    border-bottom: 1px solid var(--mm-border);
+}
+
+.mm-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--mm-border);
+    color: var(--mm-gray);
+}

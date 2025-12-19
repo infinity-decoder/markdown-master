@@ -7,7 +7,7 @@
  * @since 2.0.0
  */
 
-(function($) {
+(function ($) {
     'use strict';
 
     /**
@@ -20,7 +20,7 @@
             this.timer = null;
             this.startTime = null;
             this.timerInterval = null;
-            
+
             this.init();
         }
 
@@ -49,9 +49,12 @@
                 this.initTimer(timerEl.data('seconds'));
             }
 
+            // Initialize Sortable for Sequence questions
+            this.initSortable();
+
             // Prevent duplicate submissions
             let isSubmitting = false;
-            this.container.find('.mm-submit-quiz').on('click', function() {
+            this.container.find('.mm-submit-quiz').on('click', function () {
                 if (isSubmitting) {
                     return false;
                 }
@@ -68,7 +71,7 @@
         startQuiz() {
             this.container.find('.mm-quiz-welcome').fadeOut(300, () => {
                 this.container.find('.mm-quiz-form').fadeIn(300);
-                
+
                 // Start timer if exists
                 if (this.timerInterval) {
                     this.startTimer();
@@ -83,7 +86,7 @@
         toggleHint(button) {
             const content = button.next('.mm-hint-content');
             const isExpanded = button.attr('aria-expanded') === 'true';
-            
+
             content.slideToggle(300);
             button.attr('aria-expanded', !isExpanded);
             button.text(isExpanded ? 'Show Hint' : 'Hide Hint');
@@ -124,6 +127,19 @@
             // Timer interval already set in initTimer
         }
 
+        initSortable() {
+            const $sortables = this.container.find('.mm-sortable');
+            if ($sortables.length && $.fn.sortable) {
+                $sortables.sortable({
+                    placeholder: 'mm-sortable-placeholder',
+                    forcePlaceholderSize: true,
+                    update: (event, ui) => {
+                        // Nothing to do here for now as hidden inputs are inside and move with items
+                    }
+                });
+            }
+        }
+
         timeUp() {
             alert('Time is up! The quiz will be submitted automatically.');
             this.container.find('.mm-quiz-form-element').submit();
@@ -137,23 +153,23 @@
 
         copyCode(button) {
             const code = button.data('clipboard-text');
-            
+
             // Create temporary textarea
             const $temp = $('<textarea>');
             $('body').append($temp);
             $temp.val(code).select();
-            
+
             try {
                 document.execCommand('copy');
                 button.find('.mm-copy-text').text('Copied!');
-                
+
                 setTimeout(() => {
                     button.find('.mm-copy-text').text('Copy');
                 }, 2000);
             } catch (err) {
                 console.error('Failed to copy code:', err);
             }
-            
+
             $temp.remove();
         }
     }
@@ -182,7 +198,7 @@
         }
 
         responsiveTables() {
-            $('.mm-markdown-content table').each(function() {
+            $('.mm-markdown-content table').each(function () {
                 if (!$(this).parent().hasClass('mm-table-wrapper')) {
                     $(this).wrap('<div class="mm-table-wrapper" style="overflow-x:auto;"></div>');
                 }
@@ -213,7 +229,7 @@
             const errors = [];
 
             // Check required fields
-            this.form.find('[required]').each(function() {
+            this.form.find('[required]').each(function () {
                 const $field = $(this);
                 const value = $field.val();
 
@@ -239,10 +255,10 @@
             });
 
             // Checkbox questions - ensure at least one checked
-            this.form.find('.mm-checkbox-options').each(function() {
+            this.form.find('.mm-checkbox-options').each(function () {
                 const $group = $(this);
                 const checked = $group.find('input[type="checkbox"]:checked').length;
-                
+
                 if (checked === 0 && $group.closest('.mm-question').find('[required]').length) {
                     $group.addClass('mm-field-error');
                     isValid = false;
@@ -280,7 +296,7 @@
         }
 
         keyboardSupport() {
-            $('.mm-radio-label, .mm-checkbox-label').on('keypress', function(e) {
+            $('.mm-radio-label, .mm-checkbox-label').on('keypress', function (e) {
                 if (e.which === 13 || e.which === 32) { // Enter or Space
                     e.preventDefault();
                     $(this).find('input').click();
@@ -295,7 +311,7 @@
 
         focusManagement() {
             // Focus first field when quiz starts
-            $('.mm-start-quiz').on('click', function() {
+            $('.mm-start-quiz').on('click', function () {
                 setTimeout(() => {
                     $('.mm-quiz-form-element').find('input, select, textarea').first().focus();
                 }, 350);
@@ -336,10 +352,10 @@
 
         enableAutoSave() {
             // Save quiz progress to localStorage
-            $('.mm-quiz-form-element').on('change', 'input, select, textarea', function() {
+            $('.mm-quiz-form-element').on('change', 'input, select, textarea', function () {
                 const quizId = $(this).closest('.mm-quiz-container').data('quiz-id');
                 const formData = $(this).closest('form').serialize();
-                
+
                 try {
                     localStorage.setItem('mm_quiz_draft_' + quizId, formData);
                 } catch (e) {
@@ -348,10 +364,10 @@
             });
 
             // Restore on page load
-            $('.mm-quiz-container').each(function() {
+            $('.mm-quiz-container').each(function () {
                 const quizId = $(this).data('quiz-id');
                 const saved = localStorage.getItem('mm_quiz_draft_' + quizId);
-                
+
                 if (saved) {
                     // Show restore prompt
                     if (confirm('Restore your previous answers?')) {
@@ -385,9 +401,9 @@
     /**
      * Initialize on Document Ready
      */
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Initialize quiz handlers
-        $('.mm-quiz-container').each(function() {
+        $('.mm-quiz-container').each(function () {
             new MMQuizHandler(this);
             new MMFormValidator($(this).find('.mm-quiz-form-element'));
         });
@@ -404,7 +420,7 @@
         new MMProgressiveEnhancement();
 
         // Smooth scroll to results
-        $('.mm-quiz-results').each(function() {
+        $('.mm-quiz-results').each(function () {
             $('html, body').animate({
                 scrollTop: $(this).offset().top - 100
             }, 500);
@@ -418,7 +434,7 @@
         /**
          * Format time in MM:SS
          */
-        formatTime: function(seconds) {
+        formatTime: function (seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
@@ -427,7 +443,7 @@
         /**
          * Debounce function
          */
-        debounce: function(func, wait) {
+        debounce: function (func, wait) {
             let timeout;
             return function executedFunction(...args) {
                 const later = () => {
@@ -442,7 +458,7 @@
         /**
          * Sanitize HTML
          */
-        escapeHtml: function(text) {
+        escapeHtml: function (text) {
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',

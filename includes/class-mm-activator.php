@@ -85,6 +85,7 @@ class MM_Activator {
             title VARCHAR(255) NOT NULL DEFAULT '',
             description LONGTEXT NULL,
             settings LONGTEXT NULL,
+            lead_fields LONGTEXT NULL,
             time_limit INT UNSIGNED NOT NULL DEFAULT 0,
             attempts_allowed INT UNSIGNED NOT NULL DEFAULT 0,
             show_answers TINYINT(1) NOT NULL DEFAULT 0,
