@@ -155,3 +155,240 @@
     border-bottom: 1px solid var(--mm-border);
     color: var(--mm-gray);
 }
+
+/* Snippet Listing & Cards */
+.mm-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.mm-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--mm-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.mm-card:hover {
+    box-shadow: var(--mm-shadow);
+    border-color: var(--mm-primary);
+}
+
+.mm-card-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--mm-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.mm-card-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mm-card-title a {
+    color: var(--mm-dark);
+    text-decoration: none;
+}
+
+.mm-card-id,
+.mm-card-tag {
+    font-size: 11px;
+    background: var(--mm-light);
+    color: var(--mm-gray);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.mm-card-body {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.mm-card-preview {
+    font-size: 14px;
+    color: var(--mm-gray);
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.mm-shortcode-box {
+    display: flex;
+    align-items: center;
+    background: var(--mm-light);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--mm-border);
+}
+
+.mm-shortcode-box code {
+    flex-grow: 1;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    background: transparent;
+    padding: 0;
+}
+
+.mm-copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--mm-primary);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.mm-copy-btn:hover {
+    color: var(--mm-primary-hover);
+}
+
+.mm-card-footer {
+    padding: 15px 20px;
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mm-card-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.mm-action-link {
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--mm-gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mm-action-link:hover {
+    color: var(--mm-primary);
+}
+
+.mm-action-link.delete:hover {
+    color: var(--mm-danger);
+}
+
+.mm-card-date {
+    font-size: 12px;
+    color: var(--mm-gray);
+}
+
+/* Forms & Editor */
+.mm-form-card {
+    padding: 40px;
+}
+
+.mm-form-group {
+    margin-bottom: 25px;
+}
+
+.mm-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--mm-dark);
+}
+
+.mm-input,
+.mm-textarea {
+    width: 100%;
+    border: 1px solid var(--mm-border);
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.mm-input:focus,
+.mm-textarea:focus {
+    border-color: var(--mm-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.mm-code-editor {
+    font-family: 'Consolas', 'Monaco', 'Courier New', Courier, monospace;
+    background: #f8fafc;
+}
+
+.mm-row {
+    display: flex;
+    gap: 20px;
+}
+
+.mm-col-6 {
+    flex: 1;
+}
+
+.mm-checkbox-wrapper {
+    padding: 12px 0;
+}
+
+/* Empty States & Filters */
+.mm-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 2px dashed var(--mm-border);
+    margin-top: 20px;
+}
+
+.mm-empty-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.mm-filter-bar {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--mm-border);
+    margin-top: 20px;
+}
+
+.mm-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mm-search-wrapper .dashicons {
+    position: absolute;
+    left: 12px;
+    color: var(--mm-gray);
+}
+
+.mm-search-wrapper input {
+    padding-left: 40px !important;
+    width: 300px;
+}
+
+.mm-btn-secondary {
+    background: #fff;
+    border: 1px solid var(--mm-border);
+    color: var(--mm-dark);
+}
+
+.mm-btn-secondary:hover {
+    background: var(--mm-light);
+}
+
+.mm-btn-large {
+    padding: 12px 30px;
+    font-size: 16px;
+}

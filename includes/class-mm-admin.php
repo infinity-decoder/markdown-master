@@ -216,6 +216,10 @@ class MM_Admin {
         // Admin post handlers
         add_action( 'admin_post_mm_save_quiz', [ $this, 'handle_save_quiz' ] );
         add_action( 'admin_post_mm_delete_quiz', [ $this, 'handle_delete_quiz' ] );
+        add_action( 'admin_post_mm_save_markdown_snippet', [ $this, 'handle_save_markdown_snippet' ] );
+        add_action( 'admin_post_mm_delete_markdown_snippet', [ $this, 'handle_delete_markdown_snippet' ] );
+        add_action( 'admin_post_mm_save_code_snippet', [ $this, 'handle_save_code_snippet' ] );
+        add_action( 'admin_post_mm_delete_code_snippet', [ $this, 'handle_delete_code_snippet' ] );
         add_action( 'admin_post_mm_import_questions', [ $this, 'handle_import_questions' ] );
     }
 
@@ -729,15 +733,60 @@ class MM_Admin {
              require_once MM_INCLUDES . 'class-mm-markdown-snippets.php';
         }
         $snippet_model = new MM_Markdown_Snippets();
-        $snippets = $snippet_model->get_all_snippets();
+        $action = isset( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : 'list';
+        $id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
 
+        if ( 'create' === $action || 'edit' === $action ) {
+            $snippet = ( 'edit' === $action && $id > 0 ) ? $snippet_model->get_snippet( $id ) : null;
+            $title = $snippet ? sprintf( __( 'Edit Snippet: %s', 'markdown-master' ), $snippet['title'] ) : __( 'Create New Markdown Snippet', 'markdown-master' );
+            ?>
+            <div class="wrap mm-admin-dashboard">
+                <div class="mm-dashboard-header">
+                    <h1><?php echo esc_html( $title ); ?></h1>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=mm_markdown_snippets' ) ); ?>" class="mm-btn mm-btn-secondary">
+                        <?php esc_html_e( 'Back to List', 'markdown-master' ); ?>
+                    </a>
+                </div>
+
+                <div class="mm-card mm-form-card">
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                        <?php wp_nonce_field( 'mm_save_markdown_snippet', 'mm_snippet_nonce' ); ?>
+                        <input type="hidden" name="action" value="mm_save_markdown_snippet">
+                        <input type="hidden" name="snippet_id" value="<?php echo esc_attr( $id ); ?>">
+
+                        <div class="mm-form-group">
+                            <label for="mm_snippet_title"><?php esc_html_e( 'Snippet Title', 'markdown-master' ); ?></label>
+                            <input type="text" id="mm_snippet_title" name="title" class="mm-input" value="<?php echo $snippet ? esc_attr( $snippet['title'] ) : ''; ?>" required placeholder="<?php esc_attr_e( 'Enter a descriptive title...', 'markdown-master' ); ?>">
+                        </div>
+
+                        <div class="mm-form-group">
+                            <label for="mm_snippet_content"><?php esc_html_e( 'Markdown Content', 'markdown-master' ); ?></label>
+                            <textarea id="mm_snippet_content" name="content" class="mm-textarea mm-code-editor" rows="15" required placeholder="<?php esc_attr_e( 'Write your markdown here... Use $$ for math or standard markdown.', 'markdown-master' ); ?>"><?php echo $snippet ? esc_textarea( $snippet['content'] ) : ''; ?></textarea>
+                            <p class="description"><?php esc_html_e( 'Supports GitHub Flavored Markdown and KaTeX ($$ Math $$).', 'markdown-master' ); ?></p>
+                        </div>
+
+                        <div class="mm-form-actions">
+                            <button type="submit" class="mm-btn mm-btn-primary mm-btn-large">
+                                <?php $snippet ? esc_html_e( 'Update Snippet', 'markdown-master' ) : esc_html_e( 'Create Snippet', 'markdown-master' ); ?>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php
+            return;
+        }
+
+        $snippets = $snippet_model->get_all_snippets();
         ?>
         <div class="wrap mm-admin-dashboard">
             <div class="mm-dashboard-header">
                 <h1><?php esc_html_e( 'Markdown Snippets', 'markdown-master' ); ?></h1>
-                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' =>'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary mm-btn-large">
-                    <?php esc_html_e( '+ New Snippet', 'markdown-master' ); ?>
-                </a>
+                <div class="mm-header-actions">
+                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary mm-btn-large">
+                        <?php esc_html_e( '+ New Snippet', 'markdown-master' ); ?>
+                    </a>
+                </div>
             </div>
 
             <?php if ( empty( $snippets ) ) : ?>
@@ -753,42 +802,45 @@ class MM_Admin {
                 </div>
             <?php else : ?>
                 <div class="mm-filter-bar">
-                    <input type="search" placeholder="<?php esc_attr_e( 'Search snippets...', 'markdown-master' ); ?>">
+                    <div class="mm-search-wrapper">
+                        <span class="dashicons dashicons-search"></span>
+                        <input type="search" id="mm-snippet-search" placeholder="<?php esc_attr_e( 'Search snippets...', 'markdown-master' ); ?>">
+                    </div>
                 </div>
 
                 <div class="mm-cards-grid">
                     <?php foreach ( $snippets as $snippet ) : ?>
-                        <div class="mm-card">
+                        <div class="mm-card" data-title="<?php echo esc_attr( strtolower( $snippet['title'] ) ); ?>">
                             <div class="mm-card-header">
                                 <h3 class="mm-card-title">
                                     <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'edit', 'id' => $snippet['id'] ), admin_url( 'admin.php' ) ) ); ?>">
                                         <?php echo esc_html( $snippet['title'] ); ?>
                                     </a>
                                 </h3>
-                                <span class="mm-card-uuid">#<?php echo esc_html( $snippet['id'] ); ?></span>
+                                <span class="mm-card-id">#<?php echo esc_html( $snippet['id'] ); ?></span>
                             </div>
 
                             <div class="mm-card-body">
-                                <p class="mm-card-description">
-                                    <?php echo esc_html( wp_trim_words( $snippet['content'], 20 ) ); ?>
+                                <p class="mm-card-preview">
+                                    <?php echo esc_html( wp_trim_words( $snippet['content'], 15 ) ); ?>
                                 </p>
 
-                                <div class="mm-card-meta">
-                                    <div class="mm-meta-item">
-                                        <span class="mm-meta-icon">🔖</span>
-                                        <code>[mm-markdown id="<?php echo esc_attr( $snippet['id'] ); ?>"]</code>
-                                    </div>
+                                <div class="mm-shortcode-box">
+                                    <code>[mm-markdown id="<?php echo esc_attr( $snippet['id'] ); ?>"]</code>
+                                    <button class="mm-copy-btn" data-clipboard-text='[mm-markdown id="<?php echo esc_attr( $snippet['id'] ); ?>"]' title="<?php esc_attr_e( 'Copy Shortcode', 'markdown-master' ); ?>">
+                                        <span class="dashicons dashicons-clipboard"></span>
+                                    </button>
                                 </div>
                             </div>
 
                             <div class="mm-card-footer">
                                 <div class="mm-card-actions">
-                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'edit', 'id' => $snippet['id'] ), admin_url( 'admin.php' ) ) ); ?>" class="mm-card-action primary">
-                                        <?php esc_html_e( 'Edit', 'markdown-master' ); ?>
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'edit', 'id' => $snippet['id'] ), admin_url( 'admin.php' ) ) ); ?>" class="mm-action-link">
+                                        <span class="dashicons dashicons-edit"></span> <?php esc_html_e( 'Edit', 'markdown-master' ); ?>
                                     </a>
-                                    <button class="mm-card-action secondary mm-copy-uuid" data-uuid="[mm-markdown id=&quot;<?php echo esc_attr( $snippet['id'] ); ?>&quot;]">
-                                        <?php esc_html_e( 'Copy Shortcode', 'markdown-master' ); ?>
-                                    </button>
+                                    <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'page' => 'mm_markdown_snippets', 'action' => 'delete', 'id' => $snippet['id'] ), admin_url( 'admin-post.php' ) ), 'mm_delete_markdown_snippet_' . $snippet['id'] ) ); ?>" class="mm-action-link delete" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this snippet?', 'markdown-master' ); ?>')">
+                                        <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete', 'markdown-master' ); ?>
+                                    </a>
                                 </div>
                                 <span class="mm-card-date">
                                     <?php echo isset($snippet['created_at']) ? esc_html( human_time_diff( strtotime( $snippet['created_at'] ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__('ago', 'markdown-master') : ''; ?>
@@ -799,6 +851,34 @@ class MM_Admin {
                 </div>
             <?php endif; ?>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const search = document.getElementById('mm-snippet-search');
+                if (search) {
+                    search.addEventListener('input', function(e) {
+                        const term = e.target.value.toLowerCase();
+                        document.querySelectorAll('.mm-card').forEach(card => {
+                            const title = card.getAttribute('data-title') || '';
+                            card.style.display = title.includes(term) ? '' : 'none';
+                        });
+                    });
+                }
+                document.querySelectorAll('.mm-copy-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const text = this.getAttribute('data-clipboard-text');
+                        navigator.clipboard.writeText(text).then(() => {
+                            const icon = this.querySelector('.dashicons');
+                            icon.classList.remove('dashicons-clipboard');
+                            icon.classList.add('dashicons-yes');
+                            setTimeout(() => {
+                                icon.classList.remove('dashicons-yes');
+                                icon.classList.add('dashicons-clipboard');
+                            }, 2000);
+                        });
+                    });
+                });
+            });
+        </script>
         <?php
     }
 
@@ -810,15 +890,96 @@ class MM_Admin {
              require_once MM_INCLUDES . 'class-mm-snippet.php';
         }
         $snippet_model = new MM_Snippet();
-        $snippets = $snippet_model->get_all_snippets();
+        $action = isset( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : 'list';
+        $id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
 
+        if ( 'create' === $action || 'edit' === $action ) {
+            $snippet = ( 'edit' === $action && $id > 0 ) ? $snippet_model->get_snippet( $id ) : null;
+            $title = $snippet ? sprintf( __( 'Edit Code Snippet: %s', 'markdown-master' ), $snippet->title ) : __( 'Create New Code Snippet', 'markdown-master' );
+            
+            $languages = array(
+                'text'       => 'Plain Text',
+                'php'        => 'PHP',
+                'javascript' => 'JavaScript',
+                'css'        => 'CSS',
+                'html'       => 'HTML',
+                'sql'        => 'SQL',
+                'python'     => 'Python',
+                'bash'       => 'Bash/Shell',
+                'markdown'   => 'Markdown',
+                'json'       => 'JSON'
+            );
+            ?>
+            <div class="wrap mm-admin-dashboard">
+                <div class="mm-dashboard-header">
+                    <h1><?php echo esc_html( $title ); ?></h1>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=mm_code_snippets' ) ); ?>" class="mm-btn mm-btn-secondary">
+                        <?php esc_html_e( 'Back to List', 'markdown-master' ); ?>
+                    </a>
+                </div>
+
+                <div class="mm-card mm-form-card">
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                        <?php wp_nonce_field( 'mm_save_code_snippet', 'mm_snippet_nonce' ); ?>
+                        <input type="hidden" name="action" value="mm_save_code_snippet">
+                        <input type="hidden" name="snippet_id" value="<?php echo esc_attr( $id ); ?>">
+
+                        <div class="mm-form-group">
+                            <label for="mm_snippet_title"><?php esc_html_e( 'Snippet Title', 'markdown-master' ); ?></label>
+                            <input type="text" id="mm_snippet_title" name="title" class="mm-input" value="<?php echo $snippet ? esc_attr( $snippet->title ) : ''; ?>" required placeholder="<?php esc_attr_e( 'Enter a descriptive title...', 'markdown-master' ); ?>">
+                        </div>
+
+                        <div class="mm-row">
+                            <div class="mm-col-6">
+                                <div class="mm-form-group">
+                                    <label for="mm_snippet_language"><?php esc_html_e( 'Language', 'markdown-master' ); ?></label>
+                                    <select id="mm_snippet_language" name="language" class="mm-input" required>
+                                        <?php foreach ( $languages as $lang_code => $lang_name ) : ?>
+                                            <option value="<?php echo esc_attr( $lang_code ); ?>" <?php selected( $snippet ? $snippet->language : '', $lang_code ); ?>><?php echo esc_html( $lang_name ); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mm-col-6">
+                                <div class="mm-form-group">
+                                    <label for="mm_show_copy_button"><?php esc_html_e( 'Options', 'markdown-master' ); ?></label>
+                                    <div class="mm-checkbox-wrapper">
+                                        <label>
+                                            <input type="checkbox" name="show_copy_button" value="1" <?php checked( $snippet ? $snippet->show_copy_button : 1, 1 ); ?>>
+                                            <?php esc_html_e( 'Show Copy Button', 'markdown-master' ); ?>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mm-form-group">
+                            <label for="mm_snippet_code"><?php esc_html_e( 'Code Content', 'markdown-master' ); ?></label>
+                            <textarea id="mm_snippet_code" name="code" class="mm-textarea mm-code-editor" rows="15" required placeholder="<?php esc_attr_e( 'Paste your code here...', 'markdown-master' ); ?>"><?php echo $snippet ? esc_textarea( $snippet->code ) : ''; ?></textarea>
+                        </div>
+
+                        <div class="mm-form-actions">
+                            <button type="submit" class="mm-btn mm-btn-primary mm-btn-large">
+                                <?php $snippet ? esc_html_e( 'Update Snippet', 'markdown-master' ) : esc_html_e( 'Create Snippet', 'markdown-master' ); ?>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php
+            return;
+        }
+
+        $snippets = $snippet_model->get_all_snippets();
         ?>
         <div class="wrap mm-admin-dashboard">
             <div class="mm-dashboard-header">
                 <h1><?php esc_html_e( 'Code Snippets', 'markdown-master' ); ?></h1>
-                <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' =>'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary mm-btn-large">
-                    <?php esc_html_e( '+ New Snippet', 'markdown-master' ); ?>
-                </a>
+                <div class="mm-header-actions">
+                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'create' ), admin_url( 'admin.php' ) ) ); ?>" class="mm-btn mm-btn-primary mm-btn-large">
+                        <?php esc_html_e( '+ New Snippet', 'markdown-master' ); ?>
+                    </a>
+                </div>
             </div>
 
             <?php if ( empty( $snippets ) ) : ?>
@@ -834,12 +995,15 @@ class MM_Admin {
                 </div>
             <?php else : ?>
                 <div class="mm-filter-bar">
-                    <input type="search" placeholder="<?php esc_attr_e( 'Search snippets...', 'markdown-master' ); ?>">
+                    <div class="mm-search-wrapper">
+                        <span class="dashicons dashicons-search"></span>
+                        <input type="search" id="mm-code-search" placeholder="<?php esc_attr_e( 'Search code snippets...', 'markdown-master' ); ?>">
+                    </div>
                 </div>
 
                 <div class="mm-cards-grid">
                     <?php foreach ( $snippets as $snippet ) : ?>
-                        <div class="mm-card">
+                        <div class="mm-card" data-title="<?php echo esc_attr( strtolower( $snippet->title ) ); ?>">
                             <div class="mm-card-header">
                                 <h3 class="mm-card-title">
                                     <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'edit', 'id' => $snippet->id ), admin_url( 'admin.php' ) ) ); ?>">
@@ -850,24 +1014,26 @@ class MM_Admin {
                             </div>
 
                             <div class="mm-card-body">
-                                <pre class="mm-code-preview"><code><?php echo esc_html( wp_trim_words( $snippet->code, 15 ) ); ?></code></pre>
+                                <div class="mm-code-preview-wrap">
+                                    <pre class="mm-code-preview"><code><?php echo esc_html( wp_trim_words( $snippet->code, 10 ) ); ?></code></pre>
+                                </div>
 
-                                <div class="mm-card-meta">
-                                    <div class="mm-meta-item">
-                                        <span class="mm-meta-icon">🔖</span>
-                                        <code>[mm-code id="<?php echo esc_attr( $snippet->id ); ?>"]</code>
-                                    </div>
+                                <div class="mm-shortcode-box">
+                                    <code>[mm-code id="<?php echo esc_attr( $snippet->id ); ?>"]</code>
+                                    <button class="mm-copy-btn" data-clipboard-text='[mm-code id="<?php echo esc_attr( $snippet->id ); ?>"]' title="<?php esc_attr_e( 'Copy Shortcode', 'markdown-master' ); ?>">
+                                        <span class="dashicons dashicons-clipboard"></span>
+                                    </button>
                                 </div>
                             </div>
 
                             <div class="mm-card-footer">
                                 <div class="mm-card-actions">
-                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'edit', 'id' => $snippet->id ), admin_url( 'admin.php' ) ) ); ?>" class="mm-card-action primary">
-                                        <?php esc_html_e( 'Edit', 'markdown-master' ); ?>
+                                    <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'edit', 'id' => $snippet->id ), admin_url( 'admin.php' ) ) ); ?>" class="mm-action-link">
+                                        <span class="dashicons dashicons-edit"></span> <?php esc_html_e( 'Edit', 'markdown-master' ); ?>
                                     </a>
-                                    <button class="mm-card-action secondary mm-copy-uuid" data-uuid="[mm-code id=&quot;<?php echo esc_attr( $snippet->id ); ?>&quot;]">
-                                        <?php esc_html_e( 'Copy Shortcode', 'markdown-master' ); ?>
-                                    </button>
+                                    <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'page' => 'mm_code_snippets', 'action' => 'delete', 'id' => $snippet->id ), admin_url( 'admin-post.php' ) ), 'mm_delete_code_snippet_' . $snippet->id ) ); ?>" class="mm-action-link delete" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this snippet?', 'markdown-master' ); ?>')">
+                                        <span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete', 'markdown-master' ); ?>
+                                    </a>
                                 </div>
                                 <span class="mm-card-date">
                                     <?php echo isset($snippet->created_at) ? esc_html( human_time_diff( strtotime( $snippet->created_at ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__('ago', 'markdown-master') : ''; ?>
@@ -878,6 +1044,20 @@ class MM_Admin {
                 </div>
             <?php endif; ?>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const search = document.getElementById('mm-code-search');
+                if (search) {
+                    search.addEventListener('input', function(e) {
+                        const term = e.target.value.toLowerCase();
+                        document.querySelectorAll('.mm-card').forEach(card => {
+                            const title = card.getAttribute('data-title') || '';
+                            card.style.display = title.includes(term) ? '' : 'none';
+                        });
+                    });
+                }
+            });
+        </script>
         <?php
     }
     public function render_lead_captures_page() {
@@ -1275,6 +1455,100 @@ class MM_Admin {
         fclose( $fh );
 
         wp_safe_redirect( admin_url( 'admin.php?page=mm_quizzes&action=manage&id=' . $quiz_id . '&mm_msg=' . urlencode( sprintf( _n( '%d question imported', '%d questions imported', $inserted, 'markdown-master' ), $inserted ) ) ) );
+        exit;
+    }
+
+    public function handle_save_markdown_snippet() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'Unauthorized', 'markdown-master' ) );
+        }
+        check_admin_referer( 'mm_save_markdown_snippet', 'mm_snippet_nonce' );
+
+        $id = isset( $_POST['snippet_id'] ) ? absint( $_POST['snippet_id'] ) : 0;
+        $data = array(
+            'title'   => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+            'content' => isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : '',
+        );
+
+        if ( ! class_exists( 'MM_Markdown_Snippets' ) ) {
+             require_once MM_INCLUDES . 'class-mm-markdown-snippets.php';
+        }
+        $snippet_model = new MM_Markdown_Snippets();
+
+        if ( $id > 0 ) {
+            $snippet_model->update_snippet( $id, $data );
+            $msg = __( 'Markdown snippet updated.', 'markdown-master' );
+        } else {
+            $id = $snippet_model->create_snippet( $data );
+            $msg = __( 'Markdown snippet created.', 'markdown-master' );
+        }
+
+        wp_safe_redirect( admin_url( 'admin.php?page=mm_markdown_snippets&action=edit&id=' . $id . '&mm_msg=' . urlencode( $msg ) ) );
+        exit;
+    }
+
+    public function handle_delete_markdown_snippet() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'Unauthorized', 'markdown-master' ) );
+        }
+        $id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+        check_admin_referer( 'mm_delete_markdown_snippet_' . $id );
+
+        if ( ! class_exists( 'MM_Markdown_Snippets' ) ) {
+             require_once MM_INCLUDES . 'class-mm-markdown-snippets.php';
+        }
+        $snippet_model = new MM_Markdown_Snippets();
+        $snippet_model->delete_snippet( $id );
+
+        wp_safe_redirect( admin_url( 'admin.php?page=mm_markdown_snippets&mm_msg=' . urlencode( __( 'Snippet deleted.', 'markdown-master' ) ) ) );
+        exit;
+    }
+
+    public function handle_save_code_snippet() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'Unauthorized', 'markdown-master' ) );
+        }
+        check_admin_referer( 'mm_save_code_snippet', 'mm_snippet_nonce' );
+
+        $id = isset( $_POST['snippet_id'] ) ? absint( $_POST['snippet_id'] ) : 0;
+        $data = array(
+            'title'            => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+            'code'             => isset( $_POST['code'] ) ? wp_unslash( $_POST['code'] ) : '',
+            'language'         => isset( $_POST['language'] ) ? sanitize_text_field( $_POST['language'] ) : 'text',
+            'show_copy_button' => isset( $_POST['show_copy_button'] ) ? 1 : 0,
+        );
+
+        if ( ! class_exists( 'MM_Snippet' ) ) {
+             require_once MM_INCLUDES . 'class-mm-snippet.php';
+        }
+        $snippet_model = new MM_Snippet();
+
+        if ( $id > 0 ) {
+            $snippet_model->update_snippet( $id, $data );
+            $msg = __( 'Code snippet updated.', 'markdown-master' );
+        } else {
+            $id = $snippet_model->create_snippet( $data );
+            $msg = __( 'Code snippet created.', 'markdown-master' );
+        }
+
+        wp_safe_redirect( admin_url( 'admin.php?page=mm_code_snippets&action=edit&id=' . $id . '&mm_msg=' . urlencode( $msg ) ) );
+        exit;
+    }
+
+    public function handle_delete_code_snippet() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'Unauthorized', 'markdown-master' ) );
+        }
+        $id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+        check_admin_referer( 'mm_delete_code_snippet_' . $id );
+
+        if ( ! class_exists( 'MM_Snippet' ) ) {
+             require_once MM_INCLUDES . 'class-mm-snippet.php';
+        }
+        $snippet_model = new MM_Snippet();
+        $snippet_model->delete_snippet( $id );
+
+        wp_safe_redirect( admin_url( 'admin.php?page=mm_code_snippets&mm_msg=' . urlencode( __( 'Snippet deleted.', 'markdown-master' ) ) ) );
         exit;
     }
 

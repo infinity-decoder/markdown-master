@@ -225,7 +225,7 @@ class MM_Shortcodes {
         $html .= '</div>';
 
         // Enqueue highlighting library
-        $this->enqueue_code_assets();
+        $this->enqueue_code_assets( $language );
 
         return $html;
     }
@@ -854,10 +854,13 @@ class MM_Shortcodes {
 
     /**
      * Enqueue code highlighting assets
+     * 
+     * @param string $language Specific language to load
      */
-    protected function enqueue_code_assets() {
+    protected function enqueue_code_assets( $language = '' ) {
         if ( class_exists( 'MM_Highlighter' ) ) {
-            MM_Highlighter::enqueue_assets();
+            $languages = ! empty( $language ) ? array( $language ) : array();
+            MM_Highlighter::enqueue_assets( $languages );
         }
     }
 }
