@@ -20,39 +20,53 @@ if ( ! empty( $curriculum_json ) ) {
     }
 }
 
-// Fallback / Empty State
 if ( empty( $curriculum ) ) {
-    // Optional: Show a message or nothing. 
-    // For now we show nothing if empty to avoid clutter.
-    if ( current_user_can( 'edit_post', get_the_ID() ) ) {
-        echo '<div class="cortex-alert cortex-alert-info">' . __( 'No curriculum found. Please arrange topics in the Course Builder.', 'cortex' ) . '</div>';
-    }
     return;
 }
 ?>
 
-<div class="cortex-curriculum-wrap">
-    <h3 class="cortex-mb-6"><?php _e( 'Course Content', 'cortex' ); ?></h3>
+<div class="cortex-course-topics-wrap">
+    <div class="cortex-course-topics-header cortex-flex cortex-justify-between cortex-align-center cortex-mb-24">
+        <h4 class="cortex-fs-5 cortex-fw-bold cortex-color-black"><?php _e( 'Course Content', 'cortex' ); ?></h4>
+        <!-- Expand/Collapse functionality placeholder -->
+    </div>
     
-    <div class="cortex-accordion">
+    <div class="cortex-accordion cortex-course-topics-accordion">
         <?php foreach ( $curriculum as $index => $topic ) : ?>
-            <div class="cortex-accordion-item">
-                <div class="cortex-accordion-header cortex-p-4 cortex-bg-light cortex-border-bottom cortex-flex cortex-justify-between cortex-cursor-pointer">
-                    <span class="cortex-topic-title cortex-font-medium"><?php echo esc_html( $topic['title'] ); ?></span>
-                    <span class="cortex-topic-meta cortex-text-sm"><?php echo count( $topic['lessons'] ); ?> <?php _e( 'Lessons', 'cortex' ); ?></span>
+            <div class="cortex-accordion-item cortex-border cortex-rounded cortex-mb-16">
+                <!-- Header -->
+                <div class="cortex-accordion-header cortex-p-20 cortex-bg-light-gray cortex-cursor-pointer cortex-flex cortex-justify-between cortex-align-center">
+                    <div class="cortex-topic-title-wrap cortex-flex cortex-align-center">
+                        <span class="dashicons dashicons-arrow-down-alt2 cortex-mr-12 cortex-color-text-primary"></span>
+                        <h5 class="cortex-topic-title cortex-fs-6 cortex-fw-bold cortex-m-0">
+                            <?php echo esc_html( $topic['title'] ); ?>
+                        </h5>
+                    </div>
+                    <div class="cortex-topic-meta cortex-fs-7 cortex-text-muted">
+                        <span><?php echo count( $topic['lessons'] ); ?> <?php _e( 'Lessons', 'cortex' ); ?></span>
+                    </div>
                 </div>
-                <div class="cortex-accordion-body cortex-p-0">
-                    <ul class="cortex-lesson-list">
+
+                <!-- Body -->
+                <div class="cortex-accordion-body cortex-p-0" style="display:block;"> <!-- Assuming open by default for MVP -->
+                    <div class="cortex-course-lessons">
                         <?php foreach ( $topic['lessons'] as $lesson ) : ?>
-                            <li class="cortex-lesson-item cortex-p-3 cortex-border-bottom cortex-flex cortex-justify-between cortex-items-center">
-                                <div class="cortex-flex cortex-items-center cortex-gap-2">
-                                    <span class="dashicons dashicons-<?php echo $lesson['type'] === 'video' ? 'video-alt3' : 'media-text'; ?> cortex-text-muted"></span>
-                                    <span class="cortex-lesson-title"><?php echo esc_html( $lesson['title'] ); ?></span>
+                            <div class="cortex-course-lesson cortex-flex cortex-justify-between cortex-align-center cortex-p-16 cortex-border-top">
+                                <div class="cortex-lesson-title-wrap cortex-flex cortex-align-center">
+                                    <span class="dashicons dashicons-media-text cortex-mr-12 cortex-text-muted"></span>
+                                    <a href="#" class="cortex-lesson-title cortex-color-black cortex-text-decoration-none">
+                                        <?php echo esc_html( $lesson['title'] ); ?>
+                                    </a>
                                 </div>
-                                <span class="cortex-lesson-duration cortex-text-xs cortex-text-muted"><?php echo esc_html( $lesson['duration'] ); ?></span>
-                            </li>
+                                <div class="cortex-lesson-meta">
+                                     <span class="cortex-lesson-duration cortex-fs-7 cortex-text-muted">
+                                         <?php echo esc_html( $lesson['duration'] ); ?>
+                                     </span>
+                                     <span class="dashicons dashicons-lock cortex-ml-12 cortex-text-muted"></span>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
-                    </ul>
+                    </div>
                 </div>
             </div>
         <?php endforeach; ?>

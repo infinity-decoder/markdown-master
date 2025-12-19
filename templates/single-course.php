@@ -12,96 +12,100 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 get_header(); ?>
 
-<div class="cortex-lms-wrap cortex-course-single">
+<?php do_action( 'cortex_course/single/before/wrap' ); ?>
+
+<div class="cortex-wrap-parent cortex-course-details-page cortex-page-wrap">
     <div class="cortex-container">
         
         <?php while ( have_posts() ) : the_post(); ?>
             
-            <?php do_action( 'cortex_course/single/before/wrap' ); ?>
+            <!-- Lead Info -->
+            <?php Cortex_Template_Loader::get_template_part( 'single/course/lead-info' ); ?>
 
-            <!-- Course Header / Lead Info -->
-            <div class="cortex-course-header">
-                <?php Cortex_Template_Loader::get_template_part( 'single/course/lead-info' ); ?>
-            </div>
-
-            <div class="cortex-row cortex-mt-8">
+            <div class="cortex-row cortex-gx-xl-5">
+                
                 <!-- Main Content -->
-                <div class="cortex-col-8">
+                <main class="cortex-col-xl-8">
                     
-                    <!-- Featured Image / Video -->
-                    <div class="cortex-course-thumbnail cortex-mb-6">
-                        <?php if ( has_post_thumbnail() ) : ?>
+                    <!-- Video / Thumbnail -->
+                    <div class="cortex-course-thumbnail">
+                        <?php if ( get_post_meta( get_the_ID(), '_video_url', true ) ) : ?>
+                            <!-- Video Placeholder -->
+                            <div class="cortex-ratio cortex-ratio-16x9">
+                                <iframe src="<?php echo esc_url( get_post_meta( get_the_ID(), '_video_url', true ) ); ?>" allowfullscreen></iframe>
+                            </div>
+                        <?php elseif ( has_post_thumbnail() ) : ?>
                             <?php the_post_thumbnail( 'large', array( 'class' => 'cortex-img-fluid cortex-rounded' ) ); ?>
                         <?php endif; ?>
                     </div>
 
-                    <!-- Tabs -->
-                    <div class="cortex-course-tabs">
-                        <ul class="cortex-nav cortex-nav-tabs">
-                            <li class="cortex-nav-item">
-                                <a href="#cortex-course-overview" class="cortex-nav-link active"><?php _e( 'Overview', 'cortex' ); ?></a>
-                            </li>
-                            <li class="cortex-nav-item">
-                                <a href="#cortex-course-curriculum" class="cortex-nav-link"><?php _e( 'Curriculum', 'cortex' ); ?></a>
-                            </li>
-                            <li class="cortex-nav-item">
-                                <a href="#cortex-course-instructor" class="cortex-nav-link"><?php _e( 'Instructor', 'cortex' ); ?></a>
-                            </li>
-                        </ul>
+                    <?php do_action( 'cortex_course/single/before/inner-wrap' ); ?>
 
-                        <div class="cortex-tab-content cortex-mt-6">
-                            <!-- Overview Tab -->
-                            <div id="cortex-course-overview" class="cortex-tab-pane active">
-                                <div class="cortex-course-content">
+                    <!-- Tabs -->
+                    <div class="cortex-course-details-tab cortex-mt-32">
+                        <div class="cortex-tab cortex-pt-24">
+                            
+                            <!-- Tab Nav (Simplified for now, can be refactored to separate file later) -->
+                            <div class="cortex-course-tabs-nav cortex-mb-4 cortex-border-bottom">
+                                <ul class="cortex-nav cortex-nav-tabs">
+                                    <li><a href="#overview" class="active"><?php _e( 'Overview', 'cortex' ); ?></a></li>
+                                    <li><a href="#curriculum"><?php _e( 'Curriculum', 'cortex' ); ?></a></li>
+                                    <li><a href="#instructors"><?php _e( 'Instructors', 'cortex' ); ?></a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Tab: Overview -->
+                            <div id="overview" class="cortex-tab-item is-active">
+                                <div class="cortex-course-content cortex-prose">
                                     <?php the_content(); ?>
                                 </div>
                             </div>
-
-                            <!-- Curriculum Tab -->
-                            <div id="cortex-course-curriculum" class="cortex-tab-pane">
+                            
+                            <!-- Tab: Curriculum -->
+                            <div id="curriculum" class="cortex-tab-item">
                                 <?php Cortex_Template_Loader::get_template_part( 'single/course/curriculum' ); ?>
                             </div>
-                            
-                            <!-- Instructor Tab -->
-                             <div id="cortex-course-instructor" class="cortex-tab-pane">
+
+                            <!-- Tab: Instructors -->
+                             <div id="instructors" class="cortex-tab-item">
                                 <?php Cortex_Template_Loader::get_template_part( 'single/course/instructors' ); ?>
                             </div>
+
                         </div>
                     </div>
 
-                </div>
+                    <?php do_action( 'cortex_course/single/after/inner-wrap' ); ?>
+                </main>
 
                 <!-- Sidebar -->
-                <div class="cortex-col-4">
-                    <div class="cortex-course-sidebar cortex-sticky">
-                         <!-- Enrollment Box -->
-                         <div class="cortex-card cortex-enrollment-box">
-                             <div class="cortex-card-body">
-                                 <div class="cortex-course-price cortex-mb-4">
-                                     <span class="cortex-text-2xl cortex-font-bold">
-                                         <?php echo esc_html( get_post_meta( get_the_ID(), '_price', true ) ?: 'Free' ); ?>
-                                     </span>
-                                 </div>
-                                 <button class="cortex-btn cortex-btn-primary cortex-btn-block cortex-btn-lg">
-                                     <?php _e( 'Enroll Course', 'cortex' ); ?>
-                                 </button>
-                                 <div class="cortex-course-meta-list cortex-mt-6">
-                                     <!-- Meta details like duration, level etc -->
-                                     <div class="cortex-meta-item">
-                                         <span class="cortex-icon-clock"></span> <?php _e( 'Duration', 'cortex' ); ?>: <span><?php echo esc_html( get_post_meta( get_the_ID(), '_duration', true ) ); ?></span>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                    </div>
-                </div>
-            </div>
+                <aside class="cortex-col-xl-4">
+                    <div class="cortex-single-course-sidebar cortex-mt-40 cortex-mt-xl-0">
+                        <?php do_action( 'cortex_course/single/before/sidebar' ); ?>
+                        
+                        <!-- Enrollment Box -->
+                        <?php Cortex_Template_Loader::get_template_part( 'single/course/course-entry-box' ); ?>
 
-            <?php do_action( 'cortex_course/single/after/wrap' ); ?>
+                        <div class="cortex-single-course-sidebar-more cortex-mt-24">
+                            <!-- Course Tags, Requirements, etc. -->
+                            <?php if ( has_tag() ) : ?>
+                                <div class="cortex-course-tags cortex-mt-4">
+                                    <h4 class="cortex-fs-6 cortex-fw-bold"><?php _e( 'Tags', 'cortex' ); ?></h4>
+                                    <?php the_tags( '<div class="cortex-tag-list">', '', '</div>' ); ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php do_action( 'cortex_course/single/after/sidebar' ); ?>
+                    </div>
+                </aside>
+
+            </div>
 
         <?php endwhile; ?>
 
     </div>
 </div>
+
+<?php do_action( 'cortex_course/single/after/wrap' ); ?>
 
 <?php get_footer(); ?>
