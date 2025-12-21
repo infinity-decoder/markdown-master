@@ -1,0 +1,162 @@
+/* LMS Frontend - Dark Focus Mode */
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600&family=Orbitron:wght@500;700&display=swap');
+
+body.single-cortex_course,
+body.single-cortex_lesson {
+    background-color: #0B132B;
+    color: #EAF2FF;
+    font-family: 'Exo 2', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.cotex-lms-wrap {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.cotex-lms-sidebar {
+    width: 350px;
+    background: #121C3D;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
+}
+
+.cotex-course-title {
+    font-family: 'Orbitron', sans-serif;
+    color: #2FE6D6;
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.cotex-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    height: 6px;
+    border-radius: 3px;
+    margin: 20px 0 30px;
+    overflow: hidden;
+}
+
+.cotex-progress-fill {
+    height: 100%;
+    background: #2FE6D6;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+.cotex-curriculum-section {
+    margin-bottom: 25px;
+}
+
+.cotex-section-title {
+    color: #8FA3BF;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.cotex-lesson-link {
+    display: block;
+    padding: 12px 15px;
+    color: #EAF2FF;
+    text-decoration: none;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid transparent;
+}
+
+.cotex-lesson-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.cotex-lesson-link.active {
+    background: rgba(47, 230, 214, 0.1);
+    border-left-color: #2FE6D6;
+    color: #2FE6D6;
+}
+
+.cotex-lesson-link.completed {
+    color: #8CE65A;
+}
+
+.cotex-lesson-link.completed::after {
+    content: '✓';
+    float: right;
+}
+
+/* Content Area */
+.cotex-lms-content {
+    flex-grow: 1;
+    padding: 60px 80px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.cotex-lesson-header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 20px;
+}
+
+.cotex-lesson-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    margin: 0 0 10px 0;
+}
+
+.cotex-content-body {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #EAF2FF;
+}
+
+.cotex-content-body h2,
+.cotex-content-body h3 {
+    color: #2FE6D6;
+    margin-top: 40px;
+}
+
+.cotex-content-body a {
+    color: #2FE6D6;
+    text-decoration: underline;
+}
+
+.cotex-lesson-actions {
+    margin-top: 60px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.cotex-btn {
+    background: #2FE6D6;
+    color: #0B132B;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 30px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.cotex-btn:hover {
+    transform: translateY(-2px);
+    background: #1FB7B3;
+}
+
+.cotex-btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #EAF2FF;
+}

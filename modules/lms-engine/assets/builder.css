@@ -1,0 +1,101 @@
+#cotex-builder-app {
+    background: #1c2a4a;
+    /* Matches panel bg */
+    padding: 20px;
+    border-radius: 8px;
+    color: #eaf2ff;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cotex-builder-actions {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+.cotex-section {
+    background: #121c3d;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 15px;
+    padding: 10px;
+}
+
+.cotex-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.cotex-input-clean {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1em;
+    font-weight: bold;
+    flex-grow: 1;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.cotex-input-clean:focus {
+    outline: none;
+    border-bottom-color: #2fe6d6;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.cotex-lessons-list {
+    min-height: 20px;
+    padding: 5px;
+}
+
+.cotex-builder-lesson {
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 5px;
+    padding: 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: grab;
+}
+
+.cotex-builder-lesson:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.handle {
+    cursor: move;
+    color: #8fa3bf;
+}
+
+.lesson-title {
+    flex-grow: 1;
+}
+
+.edit-link {
+    color: #2fe6d6;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+.cotex-icon-btn {
+    background: none;
+    border: none;
+    color: #ff5a5a;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.cotex-empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #8fa3bf;
+    font-style: italic;
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}

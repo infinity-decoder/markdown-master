@@ -1,0 +1,228 @@
+/* Studio CSS - Full Screen Takeover */
+
+/* Hide unwanted WP Admin elements when Studio is active */
+body.post-type-cortex_course #adminmenumain,
+body.post-type-cortex_course #wpadminbar,
+body.post-type-cortex_course #wpfooter,
+body.post-type-cortex_course .notice {
+    display: none !important;
+}
+
+body.post-type-cortex_course #wpcontent,
+body.post-type-cortex_course #wpbody-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Studio Root */
+#cotex-studio-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0B132B;
+    /* Deep Indigo */
+    color: #EAF2FF;
+    z-index: 99999;
+    font-family: 'Exo 2', sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.cotex-studio-header {
+    height: 60px;
+    background: #121C3D;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.cotex-studio-brand {
+    font-family: 'Orbitron', sans-serif;
+    color: #2FE6D6;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cotex-studio-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.cotex-btn-primary {
+    background: #2FE6D6;
+    color: #0B132B;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.cotex-btn-primary:hover {
+    background: #1FB7B3;
+}
+
+.cotex-btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #EAF2FF;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Layout */
+.cotex-studio-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.cotex-studio-sidebar {
+    width: 300px;
+    background: #0e162e;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.cotex-studio-sidebar h3 {
+    text-transform: uppercase;
+    color: #5C6F89;
+    font-size: 0.8rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+#cotex-curriculum-tree {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Sidebar Items */
+.studio-section {
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+
+.studio-section-header {
+    padding: 10px;
+    font-weight: 600;
+    color: #8FA3BF;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    display: flex;
+    justify-content: space-between;
+}
+
+.studio-lesson {
+    padding: 8px 10px 8px 25px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    border-left: 2px solid transparent;
+}
+
+.studio-lesson:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.studio-lesson.active {
+    background: rgba(47, 230, 214, 0.1);
+    border-left-color: #2FE6D6;
+    color: #2FE6D6;
+}
+
+.cotex-add-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    color: #8FA3BF;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Canvas */
+.cotex-studio-canvas {
+    flex: 1;
+    background: #0B132B;
+    display: flex;
+    flex-direction: column;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+#cotex-canvas-placeholder {
+    text-align: center;
+    margin-top: 100px;
+    opacity: 0.5;
+}
+
+.cotex-empty-art {
+    font-size: 60px;
+    margin-bottom: 20px;
+}
+
+#cotex-lesson-editor {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.cotex-big-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-size: 2.5rem;
+    font-family: 'Orbitron', sans-serif;
+    color: #EAF2FF;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+}
+
+.cotex-big-input:focus {
+    outline: none;
+    border-bottom-color: #2FE6D6;
+}
+
+.cotex-editor-toolbar {
+    margin-bottom: 20px;
+    background: #121C3D;
+    padding: 10px;
+    border-radius: 4px;
+    display: flex;
+    gap: 5px;
+}
+
+.cotex-editor-toolbar button {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: #EAF2FF;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.cotex-content-editable {
+    min-height: 400px;
+    color: #EAF2FF;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    outline: none;
+}

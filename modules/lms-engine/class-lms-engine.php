@@ -13,61 +13,75 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Module extends Abstract_Module {
 
 	/**
+	 * Components.
+	 */
+	public $cpt;
+	public $roles;
+	public $progress;
+	public $public_view;
+
+	/**
 	 * Init hooks.
 	 */
 	public function init() {
-		add_action( 'init', [ $this, 'register_cpts' ] );
+		// Load Components
+		$this->load_components();
+
+		// Init Components
+		$this->cpt->init();
+		$this->roles->init();
+		// $this->builder->init(); // Disable old builder
+		$this->studio->init();
+		$this->progress->init();
+		$this->public_view->init();
+
+		// Access Control Hook
 		add_action( 'template_redirect', [ $this, 'restrict_access' ] );
 	}
 
 	/**
-	 * Register Course and Lesson CPTs.
+	 * Load Component Classes.
 	 */
-	public function register_cpts() {
-		// Courses
-		register_post_type( 'cortex_course', [
-			'labels' => [
-				'name'          => 'Courses',
-				'singular_name' => 'Course',
-			],
-			'public'      => true,
-			'show_ui'     => true,
-			'show_in_menu' => 'cotex',
-			'supports'    => [ 'title', 'editor', 'thumbnail', 'author' ],
-			'has_archive' => true,
-			'rewrite'     => [ 'slug' => 'courses' ],
-		] );
-
-		// Lessons
-		register_post_type( 'cortex_lesson', [
-			'labels' => [
-				'name'          => 'Lessons',
-				'singular_name' => 'Lesson',
-			],
-			'public'      => true,
-			'show_ui'     => true,
-			'show_in_menu' => 'cotex',
-			'supports'    => [ 'title', 'editor', 'attributes' ], // Attributes for Parent (Course)
-			'rewrite'     => [ 'slug' => 'lessons' ],
-		] );
+	private function load_components() {
+		require_once __DIR__ . '/class-lms-cpt.php';
+		require_once __DIR__ . '/class-lms-roles.php';
+		require_once __DIR__ . '/class-lms-builder.php';
+		require_once __DIR__ . '/class-lms-studio.php';
+		require_once __DIR__ . '/class-lms-progress.php';
+		require_once __DIR__ . '/class-lms-public.php';
+		
+		$this->cpt        = new CPT();
+		$this->roles      = new Roles();
+		$this->builder    = new Builder();
+		$this->studio     = new Studio();
+		$this->progress   = new Progress();
+		$this->public_view = new Public_View();
 	}
 
 	/**
 	 * Restrict Access to Lessons.
-	 *
-	 * Only enrolled users can view lessons (mock logic).
 	 */
 	public function restrict_access() {
 		if ( ! is_singular( 'cortex_lesson' ) ) {
 			return;
 		}
 
-		$lesson_id = get_the_ID();
+		// Allow admins/editors
+		if ( current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		global $post;
+		$user_id = get_current_user_id();
 		
-		// In a real scenario, we check if the user bought the parent course.
-		// For now, we just check if they are logged in.
-		if ( ! is_user_logged_in() ) {
-			wp_die( 'You must be logged in to view this lesson.', 'Access Denied', [ 'response' => 403 ] );
+		// In future: check enrollment in parent course.
+		// For now, strict "Logged In" check.
+		if ( ! $user_id ) {
+			wp_die( 
+				'<h1>Access Denied</h1><p>You must be enrolled to view this lesson.</p>', 
+				'Access Denied', 
+				[ 'response' => 403, 'back_link' => true ] 
+			);
 		}
 	}
 }
