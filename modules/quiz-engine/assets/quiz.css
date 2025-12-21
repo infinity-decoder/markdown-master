@@ -1,0 +1,44 @@
+.cotex-quiz-container {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.cotex-question {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.cotex-question h3 {
+    margin-top: 0;
+    font-size: 1.1em;
+}
+
+.cotex-options label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.cotex-btn {
+    background: #2fe6d6;
+    color: #0b132b;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.cotex-btn:hover {
+    background: #1fb7b3;
+}
+
+.cotex-quiz-result {
+    margin-top: 20px;
+    font-weight: bold;
+    color: #121c3d;
+}
