@@ -2,135 +2,222 @@
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&family=Orbitron:wght@500;700&display=swap');
 
 :root {
+    /* Brand Colors */
     --cotex-primary: #2FE6D6;
+    /* Neural Cyan */
     --cotex-primary-dark: #1FB7B3;
-    --cotex-success: #8CE65A;
+    /* Tech Teal */
+    --cotex-secondary: #0B132B;
+    /* Deep Indigo */
+    --cotex-accent: #8CE65A;
+    /* Neural Green */
     --cotex-warning: #F5C84B;
-    --cotex-bg: #0B132B;
-    --cotex-card-bg: #121C3D;
-    --cotex-text-main: #EAF2FF;
-    --cotex-text-sec: #8FA3BF;
-    --cotex-font-ui: 'Exo 2', sans-serif;
+    /* Electric Yellow */
+
+    /* UI Backgrounds */
+    --cotex-bg-app: #0B132B;
+    /* Main App BG */
+    --cotex-bg-card: #121C3D;
+    /* Card BG */
+    --cotex-bg-panel: #1C2A4A;
+    /* Slightly lighter panelling */
+
+    /* Typography */
+    --cotex-text-primary: #EAF2FF;
+    --cotex-text-secondary: #8FA3BF;
+    --cotex-text-muted: #5C6F89;
+
+    /* Fonts */
+    --cotex-font-body: 'Exo 2', sans-serif;
     --cotex-font-display: 'Orbitron', sans-serif;
+
+    /* Effects */
+    --cotex-glow: 0 0 20px rgba(47, 230, 214, 0.15);
+    --cotex-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --cotex-border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Reset & Scoped Styles */
 .cotex-wrap {
-    font-family: var(--cotex-font-ui);
-    color: var(--cotex-text-main);
-    background-color: var(--cotex-bg);
-    min-height: 100vh;
-    padding: 20px;
-    margin-left: -20px; /* Fix WP admin padding override */
-    margin-top: -10px;
+    font-family: var(--cotex-font-body);
+    color: var(--cotex-text-primary);
+    background-color: var(--cotex-bg-app);
+    min-height: calc(100vh - 32px);
+    /* Adjust for WP Admin Bar */
+    margin: -20px -20px 0 -20px;
+    /* Break out of WP Admin padding */
+    padding: 40px;
+    box-sizing: border-box;
 }
 
+.cotex-wrap * {
+    box-sizing: border-box;
+}
+
+/* --- Header Section --- */
 .cotex-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 60px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid rgba(47, 230, 214, 0.1);
+}
+
+.cotex-brand {
+    display: flex;
+    flex-direction: column;
 }
 
 .cotex-title {
     font-family: var(--cotex-font-display);
-    font-size: 2.5rem;
-    color: var(--cotex-primary);
-    text-shadow: 0 0 10px rgba(47, 230, 214, 0.3);
+    font-size: 3rem;
+    font-weight: 700;
     margin: 0;
+    background: linear-gradient(135deg, var(--cotex-primary) 0%, var(--cotex-primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    filter: drop-shadow(0 0 15px rgba(47, 230, 214, 0.3));
 }
 
 .cotex-subtitle {
-    color: var(--cotex-text-sec);
-    font-size: 1rem;
-    margin-top: 5px;
+    margin-top: 8px;
+    font-size: 1.1rem;
+    color: var(--cotex-text-secondary);
+    letter-spacing: 0.5px;
 }
 
-/* Grid */
+.cotex-header-actions .cotex-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--cotex-text-primary);
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cotex-header-actions .cotex-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+/* --- Modules Grid --- */
 .cotex-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 30px;
 }
 
-/* Card */
+/* --- Module Card --- */
 .cotex-card {
-    background: var(--cotex-card-bg);
-    border-radius: 16px;
-    padding: 25px;
-    border: 1px solid rgba(255,255,255,0.05);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: var(--cotex-bg-card);
+    border-radius: 20px;
+    padding: 30px;
     position: relative;
     overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .cotex-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    border-color: rgba(47, 230, 214, 0.2);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    border-color: rgba(47, 230, 214, 0.3);
 }
 
-.cotex-card::before {
+/* Active State Glow */
+.cotex-card.active {
+    border-color: rgba(47, 230, 214, 0.5);
+    background: linear-gradient(160deg, var(--cotex-bg-card) 60%, rgba(47, 230, 214, 0.05) 100%);
+}
+
+.cotex-card.active::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, var(--cotex-primary), var(--cotex-primary-dark));
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    background: linear-gradient(90deg, var(--cotex-primary), var(--cotex-accent));
+    box-shadow: 0 0 15px var(--cotex-primary);
 }
 
-.cotex-card.active::before {
-    opacity: 1;
-}
-
+/* Card Content */
 .cotex-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    margin-bottom: 25px;
+}
+
+.cotex-icon-box {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 20px;
+    font-size: 24px;
+    color: var(--cotex-text-secondary);
+}
+
+.cotex-card.active .cotex-icon-box {
+    background: rgba(47, 230, 214, 0.1);
+    color: var(--cotex-primary);
 }
 
 .cotex-module-name {
     font-family: var(--cotex-font-display);
-    font-size: 1.2rem;
-    margin: 0;
-    color: var(--cotex-text-main);
+    font-size: 1.4rem;
+    margin: 0 0 10px 0;
+    color: var(--cotex-text-primary);
+    width: 100%;
 }
 
 .cotex-module-desc {
-    color: var(--cotex-text-sec);
+    color: var(--cotex-text-secondary);
+    font-size: 0.95rem;
     line-height: 1.6;
-    margin-bottom: 25px;
-    min-height: 50px;
+    margin-bottom: 30px;
+    min-height: 60px;
 }
 
-/* Toggles & Badges */
-.cotex-status-badge {
-    font-size: 0.75rem;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: rgba(255,255,255,0.1);
-    color: var(--cotex-text-sec);
+/* --- Toggle Switch (Cyberpunk Style) --- */
+.cotex-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cotex-status-text {
+    font-size: 0.85rem;
     text-transform: uppercase;
+    letter-spacing: 1px;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    color: var(--cotex-text-muted);
 }
 
-.cotex-card.active .cotex-status-badge {
-    background: rgba(140, 230, 90, 0.15);
-    color: var(--cotex-success);
+.cotex-card.active .cotex-status-text {
+    color: var(--cotex-primary);
+    text-shadow: 0 0 8px rgba(47, 230, 214, 0.4);
 }
 
-/* Toggle Switch */
 .cotex-toggle {
     position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
+    width: 60px;
+    height: 32px;
+    display: block;
 }
 
 .cotex-toggle input {
@@ -146,47 +233,67 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #2a3b55;
+    background-color: #080f26;
+    /* Darker than card */
     transition: .4s;
     border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .cotex-slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
+    height: 22px;
+    width: 22px;
     left: 4px;
     bottom: 4px;
-    background-color: white;
+    background-color: var(--cotex-text-secondary);
     transition: .4s;
     border-radius: 50%;
 }
 
-input:checked + .cotex-slider {
+input:checked+.cotex-slider {
+    background-color: rgba(47, 230, 214, 0.2);
+    border-color: var(--cotex-primary);
+}
+
+input:checked+.cotex-slider:before {
+    transform: translateX(28px);
     background-color: var(--cotex-primary);
+    box-shadow: 0 0 10px var(--cotex-primary);
 }
 
-input:checked + .cotex-slider:before {
-    transform: translateX(24px);
-}
-
-/* Toast */
+/* --- Toast Notification --- */
 .cotex-toast {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--cotex-card-bg);
-    color: var(--cotex-text-main);
-    padding: 15px 25px;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    bottom: 40px;
+    right: 40px;
+    background: rgba(18, 28, 61, 0.95);
+    color: var(--cotex-text-primary);
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     border-left: 4px solid var(--cotex-primary);
-    transform: translateY(100px);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 9999;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left-width: 4px;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 99999;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .cotex-toast.show {
-    transform: translateY(0);
+    transform: translateX(0);
+}
+
+.cotex-toast.success {
+    border-left-color: var(--cotex-primary);
+}
+
+.cotex-toast.error {
+    border-left-color: #FF5A5A;
 }

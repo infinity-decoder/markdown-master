@@ -111,9 +111,8 @@ class Loader {
 			}
 		} );
 
-		// Load Modules Core
-		// require_once COTEX_PATH . 'core/class-cotex-modules.php';
-		// require_once COTEX_PATH . 'core/abstract-cotex-module.php';
+		// Explicitly load Abstract Module as it doesn't follow the Standard Class Naming convention used by Autoloader
+		require_once COTEX_PATH . 'core/abstract-cotex-module.php';
 	}
 
 	/**

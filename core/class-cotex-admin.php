@@ -23,6 +23,7 @@ class Admin {
 	 * Add menu pages.
 	 */
 	public function add_menu_pages() {
+		// Main Menu Item
 		add_menu_page(
 			'Cotex',
 			'Cotex',
@@ -31,6 +32,16 @@ class Admin {
 			[ $this, 'render_dashboard' ],
 			'dashicons-superhero',
 			25
+		);
+
+		// Explicitly add Dashboard as the first submenu to preserve the main link
+		add_submenu_page(
+			'cotex',
+			'Dashboard',
+			'Dashboard',
+			'manage_options',
+			'cotex', // Same slug as parent
+			[ $this, 'render_dashboard' ]
 		);
 	}
 
