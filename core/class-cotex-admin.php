@@ -16,7 +16,8 @@ class Admin {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', [ $this, 'add_menu_pages' ] );
+		// Run early to ensure main menu exists before CPTs try to attach
+		add_action( 'admin_menu', [ $this, 'add_menu_pages' ], 5 );
 	}
 
 	/**

@@ -69,24 +69,24 @@
     flex-direction: column;
 }
 
+/* Header */
 .cotex-title {
     font-family: var(--cotex-font-display);
     font-size: 3rem;
     font-weight: 700;
     margin: 0;
-    background: linear-gradient(135deg, var(--cotex-primary) 0%, var(--cotex-primary-dark) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--cotex-primary);
+    /* Solid fallback */
+    text-shadow: 0 0 15px rgba(47, 230, 214, 0.4);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    filter: drop-shadow(0 0 15px rgba(47, 230, 214, 0.3));
+    letter-spacing: 2px;
 }
 
 .cotex-subtitle {
-    margin-top: 8px;
-    font-size: 1.1rem;
+    margin-top: 5px;
+    font-size: 1rem;
     color: var(--cotex-text-secondary);
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .cotex-header-actions .cotex-btn {
@@ -110,26 +110,29 @@
 /* --- Modules Grid --- */
 .cotex-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    /* Reduced size */
+    gap: 20px;
 }
 
 /* --- Module Card --- */
 .cotex-card {
     background: var(--cotex-bg-card);
-    border-radius: 20px;
-    padding: 30px;
+    border-radius: 12px;
+    /* Smaller radius */
+    padding: 20px;
+    /* Reduced padding */
     position: relative;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 1px solid rgba(255, 255, 255, 0.03);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .cotex-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    border-color: rgba(47, 230, 214, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+    border-color: rgba(47, 230, 214, 0.4);
 }
 
 /* Active State Glow */
@@ -177,18 +180,20 @@
 
 .cotex-module-name {
     font-family: var(--cotex-font-display);
-    font-size: 1.4rem;
-    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    /* Smaller font */
+    margin: 0 0 8px 0;
     color: var(--cotex-text-primary);
     width: 100%;
 }
 
 .cotex-module-desc {
     color: var(--cotex-text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.6;
-    margin-bottom: 30px;
-    min-height: 60px;
+    font-size: 0.85rem;
+    /* Smaller font */
+    line-height: 1.5;
+    margin-bottom: 20px;
+    min-height: 40px;
 }
 
 /* --- Toggle Switch (Cyberpunk Style) --- */
@@ -296,4 +301,58 @@ input:checked+.cotex-slider:before {
 
 .cotex-toast.error {
     border-left-color: #FF5A5A;
+}
+
+/* --- Global Admin Styles for LMS Pages --- */
+/* Target Core WP Admin styling to match Dark Mode */
+body.post-type-cortex_course,
+body.post-type-cortex_lesson,
+body.post-type-cortex_quiz,
+body.post-type-cortex_markdown {
+    background-color: var(--cotex-bg-app) !important;
+    color: var(--cotex-text-primary) !important;
+}
+
+/* WP List Tables */
+.wp-list-table {
+    background: var(--cotex-bg-card) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.wp-list-table th,
+.wp-list-table td {
+    color: var(--cotex-text-secondary) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.wp-list-table th a {
+    color: var(--cotex-text-primary) !important;
+}
+
+.wp-list-table tr:hover {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.tablenav .current-page {
+    background: var(--cotex-primary-dark) !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* Post Titles */
+.wp-heading-inline {
+    color: var(--cotex-primary) !important;
+    font-family: var(--cotex-font-display);
+    text-shadow: 0 0 10px rgba(47, 230, 214, 0.2);
+}
+
+/* Buttons */
+.page-title-action,
+.button-primary {
+    background: var(--cotex-primary-dark) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: 4px !important;
 }

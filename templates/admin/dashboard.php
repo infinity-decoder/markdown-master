@@ -2,7 +2,7 @@
     <div class="cotex-header">
         <div class="cotex-brand">
             <h1 class="cotex-title">Cotex</h1>
-            <p class="cotex-subtitle">Modular Intelligence System v<?php echo COTEX_VERSION; ?></p>
+            <p class="cotex-subtitle">Modular WordPress Architect</p>
         </div>
         <div class="cotex-header-actions">
             <a href="#" class="cotex-btn">
