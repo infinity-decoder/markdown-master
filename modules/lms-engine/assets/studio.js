@@ -1,138 +1,163 @@
-```javascript
 jQuery(document).ready(function ($) {
     if (!$('#cotex-studio-root').length) return;
 
-    // Utils
-    function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
+    // --- State ---
+    let curriculum = cotexStudio.data || []; // [ { title, lessons: [ { id, title } ] } ]
+    let activeLessonId = null;
+    let isSaving = false;
 
-    // --- State Management ---
-    let courseData = cotexStudio.data || []; // Array of Sections
-    // Ensure structure
-    if (!Array.isArray(courseData)) courseData = [];
+    // --- Core Logic ---
+    function renderCurriculum() {
+        const $tree = $('#cotex-curriculum-tree');
+        $tree.empty();
 
-    let activeLesson = null; // { sIndex, lIndex }
-
-    // --- Renders ---
-    function renderTree() {
-        const tree = $('#cotex-curriculum-tree');
-        tree.empty();
-
-        courseData.forEach((section, sIndex) => {
-            let lessonsHtml = '';
-            if (section.lessons && section.lessons.length) {
-                section.lessons.forEach((lesson, lIndex) => {
-                    const isActive = activeLesson && activeLesson.sIndex === sIndex && activeLesson.lIndex === lIndex;
-                    lessonsHtml += `
-    < div class="studio-lesson ${isActive ? 'active' : ''}" data - s="${sIndex}" data - l="${lIndex}" >
-        ${ lesson.title || 'Untitled Lesson' }
-                        </div >
-    `;
-                });
-            }
-
+        curriculum.forEach((section, sIdx) => {
             const sectionHtml = `
-    < div class="studio-section" >
-        <div class="studio-section-header">
-            <span>${section.title || 'Untitled Section'}</span>
-            <button class="cotex-btn-secondary" style="padding:2px 6px; font-size:10px;" onclick="addLesson(${sIndex})">+</button>
-        </div>
-                    ${ lessonsHtml }
-                </div >
-    `;
-            tree.append(sectionHtml);
+                <div class="studio-section" data-idx="${sIdx}" data-id="${section.id}">
+                    <div class="studio-section-header">
+                        <span class="sec-title">${section.title || 'Untitled Section'}</span>
+                        <div class="sec-actions">
+                            <button class="add-lesson-btn" data-s="${sIdx}">+</button>
+                        </div>
+                    </div>
+                    <div class="section-lessons">
+                        ${(section.lessons || []).map(l => `
+                            <div class="studio-lesson ${activeLessonId == l.id ? 'active' : ''}" data-id="${l.id}">
+                                ${l.title || 'Untitled Lesson'}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            $tree.append(sectionHtml);
+        });
+
+        // Initialize D&D
+        $('.section-lessons').sortable({
+            connectWith: '.section-lessons',
+            stop: syncCurriculum
         });
     }
 
-    function renderEditor() {
-        if (!activeLesson) {
-            $('#cotex-canvas-placeholder').show();
-            $('#cotex-lesson-editor').hide();
-            return;
-        }
+    function syncCurriculum() {
+        // Rebuild curriculum array from DOM
+        const newCurriculum = [];
+        $('.studio-section').each(function () {
+            const section = {
+                id: $(this).data('id'),
+                title: $(this).find('.sec-title').text(),
+                lessons: []
+            };
+            $(this).find('.studio-lesson').each(function () {
+                section.lessons.push({
+                    id: $(this).data('id'),
+                    title: $(this).text().trim()
+                });
+            });
+            newCurriculum.push(section);
+        });
+        curriculum = newCurriculum;
+    }
 
-        const lesson = courseData[activeLesson.sIndex].lessons[activeLesson.lIndex];
+    // --- Lesson Editor Logic ---
+    function openLesson(id) {
+        if (isSaving) return;
+        activeLessonId = id;
 
-        $('#cotex-canvas-placeholder').hide();
+        $('.canvas-state').hide();
         $('#cotex-lesson-editor').show();
+        $('.active-lesson-settings').show();
 
-        $('#lesson-title-input').val(lesson.title || '');
-        $('#lesson-content-area').html(lesson.content || '');
+        renderCurriculum(); // Highlight active
+
+        // Fetch lesson data via AJAX if needed, or if we have tiny bootstrap
+        // For Cotex Studio, we use an AJAX-based "Inline Load"
+        const $title = $('#lesson-title-field');
+        const $lessonEl = $(`.studio-lesson[data-id="${id}"]`);
+        $title.val($lessonEl.text().trim());
+
+        // Reset Editor content - in real world we'd fetch via AJAX
+        // For V1, we simulate fetching content from a local cache or placeholder
+        // IMPORTANT: We need the actual post content.
+        fetchLessonData(id);
+    }
+
+    function fetchLessonData(id) {
+        // In this implementation, we fetch the actual post object via REST or AJAX
+        wp.ajax.post('get-post', { post_ID: id }).done(function (post) {
+            if (window.tinymce && tinymce.get('cotex_studio_canvas_editor')) {
+                tinymce.get('cotex_studio_canvas_editor').setContent(post.post_content);
+            }
+            $('#lesson-video-url').val(post.meta._cortex_video_url || '');
+            $('#lesson-rule').val(post.meta._cortex_completion_rule || 'view');
+        });
     }
 
     // --- Actions ---
-    window.addLesson = function (sIndex) {
-        if (!courseData[sIndex].lessons) courseData[sIndex].lessons = [];
-        courseData[sIndex].lessons.push({
-            id: generateUUID(),
-            title: 'New Lesson',
-            content: ''
-        });
-        renderTree();
-        // Auto select
-        activeLesson = { sIndex: sIndex, lIndex: courseData[sIndex].lessons.length - 1 };
-        renderTree();
-        renderEditor();
-    };
-
     $('#add-section-btn').on('click', function () {
         const title = prompt("Section Title:");
         if (title) {
-            courseData.push({
-                title: title,
-                lessons: []
+            wp.ajax.post('cotex_studio_create_section', {
+                nonce: cotexStudio.nonce,
+                course_id: cotexStudio.post_id,
+                title: title
+            }).done(function (res) {
+                curriculum.push({ id: res.id, title: res.title, lessons: [] });
+                renderCurriculum();
             });
-            renderTree();
         }
+    });
+
+    $(document).on('click', '.add-lesson-btn', function () {
+        const sIdx = $(this).data('s');
+        wp.ajax.post('cotex_studio_create_lesson', { nonce: cotexStudio.nonce }).done(function (res) {
+            curriculum[sIdx].lessons.push({ id: res.id, title: res.title });
+            renderCurriculum();
+            openLesson(res.id);
+        });
     });
 
     $(document).on('click', '.studio-lesson', function () {
-        const s = $(this).data('s');
-        const l = $(this).data('l');
-        activeLesson = { sIndex: s, lIndex: l };
-        renderTree();
-        renderEditor();
+        openLesson($(this).data('id'));
     });
 
-    // Content Updates
-    $('#lesson-title-input').on('input', function () {
-        if (activeLesson) {
-            courseData[activeLesson.sIndex].lessons[activeLesson.lIndex].title = $(this).val();
-            // Debounce re-render tree to avoid flicker? 
-            // For now simple:
-            $(`.studio - lesson[data - s="${activeLesson.sIndex}"][data - l="${activeLesson.lIndex}"]`).text($(this).val());
-        }
-    });
-
-    $('#lesson-content-area').on('input', function () {
-        if (activeLesson) {
-            courseData[activeLesson.sIndex].lessons[activeLesson.lIndex].content = $(this).html();
-        }
-    });
-
-    // Save
+    // Save Logic
     $('#cotex-studio-save').on('click', function () {
-        const json = JSON.stringify(courseData);
-        $('#cortex_course_data_json').val(json);
+        const $btn = $(this);
+        $btn.text('Saving...').prop('disabled', true);
 
-        // Trigger WP Save
+        // 1. Save Active Lesson via AJAX
+        if (activeLessonId) {
+            const lessonData = {
+                action: 'cotex_studio_save_lesson',
+                nonce: cotexStudio.nonce,
+                lesson_id: activeLessonId,
+                title: $('#lesson-title-field').val(),
+                content: (window.tinymce ? tinymce.get('cotex_studio_canvas_editor').getContent() : ''),
+                video_url: $('#lesson-video-url').val(),
+                rule: $('#lesson-rule').val()
+            };
+            $.post(ajaxurl, lessonData);
+        }
+
+        // 2. Save Course Data (Curriculum structure)
+        syncCurriculum();
+        $('#cortex_course_data_json').val(JSON.stringify(curriculum));
+        $('#studio-course-title').each(function () {
+            // Update the hidden real WP title field
+            $('#title').val($(this).val());
+        });
+
+        // Trigger real WP Save
         $('#publish').click();
-
-        // Show saving state
-        const btn = $(this);
-        const originalText = btn.text();
-        btn.text('Saved!');
-        setTimeout(() => btn.text(originalText), 2000);
     });
 
     $('#cotex-studio-exit').on('click', function () {
-        window.history.back();
+        if (confirm('Exit Studio? Unsaved changes may be lost.')) {
+            window.location.href = 'edit.php?post_type=cortex_course';
+        }
     });
 
     // Init
-    renderTree();
+    renderCurriculum();
 });

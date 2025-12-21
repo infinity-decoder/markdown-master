@@ -11,8 +11,20 @@ get_header(); // We might want to skip standard header if "Focus Mode" implies f
 // Let's create a standalone HTML structure for this template.
 
 $course_id = get_the_ID();
-$sections  = get_post_meta( $course_id, '_cortex_course_data', true ); // Changed to _cortex_course_data
-if ( ! is_array( $sections ) ) $sections = [];
+// Fetch hierarchical data from Meta (IDs only)
+$sections_order = get_post_meta( $course_id, '_cortex_sections_order', true ) ?: [];
+$sections = [];
+foreach($sections_order as $s_id) {
+	$s_post = get_post($s_id);
+	if(!$s_post) continue;
+	$l_ids = get_post_meta($s_id, '_cortex_lessons_order', true) ?: [];
+	$lessons = [];
+	foreach($l_ids as $l_id) {
+		$l_post = get_post($l_id);
+		if($l_post) $lessons[] = [ 'id' => $l_id, 'title' => $l_post->post_title, 'content' => $l_post->post_content ];
+	}
+	$sections[] = [ 'id' => $s_id, 'title' => $s_post->post_title, 'lessons' => $lessons ];
+}
 
 $user_id   = get_current_user_id();
 $progress  = 0;

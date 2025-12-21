@@ -1,0 +1,112 @@
+/* LMS List Table Styling - edit.php */
+
+.cotex-lms-admin.post-type-cortex_course #wpbody-content,
+.cotex-lms-admin.post-type-cortex_section #wpbody-content,
+.cotex-lms-admin.post-type-cortex_lesson #wpbody-content {
+    background-color: #0B132B;
+    /* Deep Indigo */
+    color: #EAF2FF;
+    padding: 20px;
+}
+
+.cotex-lms-admin #posts-filter {
+    background: #121C3D;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.cotex-lms-admin .wp-list-table {
+    border: none;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background: transparent;
+}
+
+.cotex-lms-admin .wp-list-table thead th {
+    background: transparent;
+    color: #8FA3BF;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border: none;
+    padding: 15px;
+}
+
+.cotex-lms-admin .wp-list-table tbody tr {
+    background: rgba(255, 255, 255, 0.02);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.cotex-lms-admin .wp-list-table tbody tr:hover {
+    background: rgba(47, 230, 214, 0.05);
+    transform: scale(1.005);
+}
+
+.cotex-lms-admin .wp-list-table tbody td {
+    border: none;
+    padding: 20px 15px;
+    vertical-align: middle;
+    color: #EAF2FF;
+}
+
+.cotex-lms-admin .wp-list-table tbody td.column-title strong a {
+    color: #2FE6D6;
+    /* Neural Cyan */
+    font-family: 'Exo 2', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cotex-lms-admin .row-actions span a {
+    color: #8FA3BF;
+}
+
+.cotex-lms-admin .row-actions span.edit a {
+    color: #1FB7B3;
+}
+
+/* Page Titles & Buttons */
+.cotex-lms-admin .wp-heading-inline {
+    font-family: 'Orbitron', sans-serif;
+    color: #2FE6D6;
+    text-transform: uppercase;
+}
+
+.cotex-lms-admin .page-title-action {
+    background: #2FE6D6;
+    color: #0B132B !important;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-family: 'Exo 2', sans-serif;
+}
+
+.cotex-lms-admin .subsubsub {
+    color: #8FA3BF;
+}
+
+.cotex-lms-admin .subsubsub a {
+    color: #2FE6D6;
+}
+
+.cotex-lms-admin .tablenav .actions select,
+.cotex-lms-admin .tablenav input[type="submit"] {
+    background: #121C3D;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #EAF2FF;
+    border-radius: 4px;
+}
+
+.cotex-lms-admin #adminmenuwrap,
+#adminmenuback {
+    background-color: #0B132B;
+}
+
+.cotex-lms-admin .displaying-num {
+    color: #8FA3BF;
+}

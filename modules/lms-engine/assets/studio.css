@@ -1,22 +1,21 @@
-/* Studio CSS - Full Screen Takeover */
+/* Enterprise Studio CSS - COTEX LMS */
 
-/* Hide unwanted WP Admin elements when Studio is active */
 body.post-type-cortex_course #adminmenumain,
 body.post-type-cortex_course #wpadminbar,
 body.post-type-cortex_course #wpfooter,
+body.post-type-cortex_course #screen-meta-links,
 body.post-type-cortex_course .notice {
     display: none !important;
 }
 
 body.post-type-cortex_course #wpcontent,
 body.post-type-cortex_course #wpbody-content {
-    margin-left: 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
     height: 100vh;
-    overflow: hidden;
 }
 
-/* Studio Root */
+/* Base Styles */
 #cotex-studio-root {
     position: fixed;
     top: 0;
@@ -24,7 +23,6 @@ body.post-type-cortex_course #wpbody-content {
     width: 100vw;
     height: 100vh;
     background: #0B132B;
-    /* Deep Indigo */
     color: #EAF2FF;
     z-index: 99999;
     font-family: 'Exo 2', sans-serif;
@@ -34,107 +32,109 @@ body.post-type-cortex_course #wpbody-content {
 
 /* Header */
 .cotex-studio-header {
-    height: 60px;
+    height: 70px;
     background: #121C3D;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 30px;
+    gap: 40px;
 }
 
 .cotex-studio-brand {
     font-family: 'Orbitron', sans-serif;
     color: #2FE6D6;
-    font-size: 1.2rem;
     letter-spacing: 2px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.cotex-studio-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.cotex-btn-primary {
-    background: #2FE6D6;
-    color: #0B132B;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 4px;
     font-weight: 700;
-    cursor: pointer;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
 }
 
-.cotex-btn-primary:hover {
-    background: #1FB7B3;
+.v-tag {
+    font-size: 10px;
+    background: rgba(47, 230, 214, 0.2);
+    padding: 2px 6px;
+    border-radius: 10px;
+    vertical-align: middle;
 }
 
-.cotex-btn-secondary {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #EAF2FF;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-/* Layout */
-.cotex-studio-layout {
-    display: flex;
+.cotex-studio-course-title {
     flex: 1;
+}
+
+.cotex-studio-course-title input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    width: 100%;
+}
+
+.cotex-studio-course-title input:focus {
+    outline: none;
+}
+
+/* Main Layout */
+.cotex-studio-main {
+    flex: 1;
+    display: flex;
     overflow: hidden;
 }
 
-/* Sidebar */
-.cotex-studio-sidebar {
-    width: 300px;
-    background: #0e162e;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+.cotex-studio-pane {
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.cotex-studio-sidebar h3 {
-    text-transform: uppercase;
+.pane-header {
+    height: 50px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
     color: #5C6F89;
-    font-size: 0.8rem;
-    margin-top: 0;
-    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Left Pane: Tree */
+.pane-left {
+    width: 320px;
+    background: #0e1635;
 }
 
 #cotex-curriculum-tree {
     flex: 1;
-    overflow-y: auto;
+    padding: 20px 10px;
 }
 
-/* Sidebar Items */
 .studio-section {
-    margin-bottom: 15px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 4px;
+    margin-bottom: 20px;
 }
 
 .studio-section-header {
-    padding: 10px;
-    font-weight: 600;
-    color: #8FA3BF;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    cursor: default;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
 .studio-lesson {
-    padding: 8px 10px 8px 25px;
+    margin-left: 20px;
+    padding: 10px 15px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.95rem;
-    border-left: 2px solid transparent;
+    font-size: 0.9rem;
+    color: #8FA3BF;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
 }
 
 .studio-lesson:hover {
@@ -143,86 +143,124 @@ body.post-type-cortex_course #wpbody-content {
 
 .studio-lesson.active {
     background: rgba(47, 230, 214, 0.1);
-    border-left-color: #2FE6D6;
     color: #2FE6D6;
+    border-color: rgba(47, 230, 214, 0.2);
 }
 
-.cotex-add-btn {
-    width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-    color: #8FA3BF;
-    cursor: pointer;
-    margin-top: 10px;
-}
-
-/* Canvas */
-.cotex-studio-canvas {
+/* Center Pane: Canvas */
+.pane-center {
     flex: 1;
     background: #0B132B;
-    display: flex;
-    flex-direction: column;
-    padding: 40px;
     overflow-y: auto;
-}
-
-#cotex-canvas-placeholder {
-    text-align: center;
-    margin-top: 100px;
-    opacity: 0.5;
-}
-
-.cotex-empty-art {
-    font-size: 60px;
-    margin-bottom: 20px;
+    padding: 60px 0;
 }
 
 #cotex-lesson-editor {
-    max-width: 800px;
+    max-width: 850px;
     margin: 0 auto;
-    width: 100%;
+    width: 90%;
 }
 
-.cotex-big-input {
+.huge-input {
     width: 100%;
     background: transparent;
     border: none;
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-family: 'Orbitron', sans-serif;
-    color: #EAF2FF;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    margin-bottom: 40px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
     padding-bottom: 10px;
-    margin-bottom: 30px;
 }
 
-.cotex-big-input:focus {
+.huge-input:focus {
     outline: none;
     border-bottom-color: #2FE6D6;
 }
 
-.cotex-editor-toolbar {
-    margin-bottom: 20px;
-    background: #121C3D;
-    padding: 10px;
-    border-radius: 4px;
-    display: flex;
-    gap: 5px;
+/* Right Pane: Settings */
+.pane-right {
+    width: 300px;
+    background: #0e1635;
+    border-right: none;
 }
 
-.cotex-editor-toolbar button {
-    background: rgba(255, 255, 255, 0.05);
+.settings-group {
+    padding: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-group label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #5C6F89;
+    margin-bottom: 20px;
+}
+
+.setting-item {
+    margin-bottom: 25px;
+}
+
+.setting-item span {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.setting-item input,
+.setting-item select {
+    width: 100%;
+    background: #121C3D;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* Buttons */
+.studio-btn-primary {
+    background: #2FE6D6;
+    color: #000;
     border: none;
-    color: #EAF2FF;
-    padding: 5px 10px;
-    border-radius: 3px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 700;
     cursor: pointer;
 }
 
-.cotex-content-editable {
-    min-height: 400px;
-    color: #EAF2FF;
-    font-size: 1.1rem;
-    line-height: 1.7;
-    outline: none;
+.studio-btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.studio-btn-ghost {
+    background: transparent;
+    color: #8FA3BF;
+    border: none;
+    cursor: pointer;
+}
+
+.studio-btn-danger {
+    width: 100%;
+    background: rgba(255, 90, 90, 0.1);
+    color: #ff5a5a;
+    border: 1px solid rgba(255, 90, 90, 0.2);
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Scrollbars */
+.styled-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.styled-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 }

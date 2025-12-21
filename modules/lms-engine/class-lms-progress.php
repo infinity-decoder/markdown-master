@@ -64,15 +64,12 @@ class Progress {
 	 * Get Course Progress Percentage.
 	 */
 	public function get_course_progress_percentage( $user_id, $course_id ) {
-		// Get all lessons in course (Unified Schema)
-		$sections = get_post_meta( $course_id, '_cortex_course_data', true );
+		// Get all lessons in course (Hierarchical)
+		$sections_order = get_post_meta( $course_id, '_cortex_sections_order', true ) ?: [];
 		$total_lessons = 0;
-		if ( is_array( $sections ) ) {
-			foreach ( $sections as $s ) {
-				if ( ! empty( $s['lessons'] ) ) {
-					$total_lessons += count( $s['lessons'] );
-				}
-			}
+		foreach ( $sections_order as $s_id ) {
+			$lesson_ids = get_post_meta( $s_id, '_cortex_lessons_order', true ) ?: [];
+			$total_lessons += count( $lesson_ids );
 		}
 
 		if ( 0 === $total_lessons ) {

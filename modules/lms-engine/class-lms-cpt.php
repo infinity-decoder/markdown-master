@@ -42,17 +42,28 @@ class CPT {
 		register_post_type( 'cortex_course', [
 			'labels'              => $labels_course,
 			'public'              => true,
-			'publicly_queryable'  => true,
 			'show_ui'             => true,
-			'show_in_menu'        => 'cotex', // Submenu of Cotex
+			'show_in_menu'        => 'cotex',
 			'query_var'           => true,
 			'rewrite'             => [ 'slug' => 'courses' ],
-			'capability_type'     => 'post', // Simplification for now, strictly should use 'cortex_course'
+			'capability_type'     => 'post',
 			'has_archive'         => true,
-			'hierarchical'        => false,
-			'menu_position'       => null,
-			'supports'            => [ 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields' ],
-			'show_in_rest'        => true, // Block Editor support
+			'supports'            => [ 'title', 'editor', 'thumbnail', 'excerpt' ],
+			'show_in_rest'        => true,
+		]);
+
+		// Section CPT (Intermediate)
+		register_post_type( 'cortex_section', [
+			'labels' => [
+				'name'          => 'Sections',
+				'singular_name' => 'Section',
+			],
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => 'cotex',
+			'supports'        => [ 'title' ],
+			'show_in_rest'    => true,
+			'hierarchical'    => false,
 		]);
 
 		// Lesson CPT
@@ -71,16 +82,12 @@ class CPT {
 		register_post_type( 'cortex_lesson', [
 			'labels'              => $labels_lesson,
 			'public'              => true,
-			'publicly_queryable'  => true,
 			'show_ui'             => true,
 			'show_in_menu'        => 'cotex',
 			'query_var'           => true,
 			'rewrite'             => [ 'slug' => 'lessons' ],
 			'capability_type'     => 'post',
-			'has_archive'         => false,
-			'hierarchical'        => false, // We'll manage hierarchy via Meta/Builder, not parents
-			'menu_position'       => null,
-			'supports'            => [ 'title', 'editor', 'author', 'thumbnail', 'comments' ], // Comments for discussion
+			'supports'            => [ 'title', 'editor', 'thumbnail' ],
 			'show_in_rest'        => true,
 		]);
 	}

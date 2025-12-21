@@ -15,10 +15,8 @@ class Module extends Abstract_Module {
 	/**
 	 * Components.
 	 */
-	public $cpt;
-	public $roles;
-	public $progress;
 	public $public_view;
+	public $admin_ui;
 
 	/**
 	 * Init hooks.
@@ -34,6 +32,7 @@ class Module extends Abstract_Module {
 		$this->studio->init();
 		$this->progress->init();
 		$this->public_view->init();
+		$this->admin_ui->init();
 
 		// Access Control Hook
 		add_action( 'template_redirect', [ $this, 'restrict_access' ] );
@@ -49,6 +48,7 @@ class Module extends Abstract_Module {
 		require_once __DIR__ . '/class-lms-studio.php';
 		require_once __DIR__ . '/class-lms-progress.php';
 		require_once __DIR__ . '/class-lms-public.php';
+		require_once __DIR__ . '/class-lms-admin-ui.php';
 		
 		$this->cpt        = new CPT();
 		$this->roles      = new Roles();
@@ -56,6 +56,7 @@ class Module extends Abstract_Module {
 		$this->studio     = new Studio();
 		$this->progress   = new Progress();
 		$this->public_view = new Public_View();
+		$this->admin_ui    = new Admin_UI();
 	}
 
 	/**
