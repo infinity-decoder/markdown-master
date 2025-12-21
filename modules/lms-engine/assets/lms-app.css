@@ -1,0 +1,228 @@
+/* Cotex LMS App Design System - Frontend */
+
+:root {
+    --lms-bg: #0B132B;
+    --lms-surface: #121C3D;
+    --lms-primary: #2FE6D6;
+    --lms-secondary: #1FB7B3;
+    --lms-success: #8CE65A;
+    --lms-text-primary: #EAF2FF;
+    --lms-text-secondary: #8FA3BF;
+    --lms-border: rgba(255, 255, 255, 0.05);
+    --lms-font-ui: 'Exo 2', sans-serif;
+    --lms-font-heading: 'Orbitron', sans-serif;
+}
+
+body.cotex-lms-app-body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--lms-bg);
+    color: var(--lms-text-primary);
+    font-family: var(--lms-font-ui);
+    -webkit-font-smoothing: antialiased;
+}
+
+.cotex-lms-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+.lms-app-header {
+    height: 70px;
+    background: var(--lms-surface);
+    border-bottom: 1px solid var(--lms-border);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.lms-brand {
+    font-family: var(--lms-font-heading);
+    color: var(--lms-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.v-tag {
+    font-size: 0.6rem;
+    background: rgba(47, 230, 214, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+.lms-main-nav {
+    margin: 0 50px;
+    display: flex;
+    gap: 30px;
+}
+
+.lms-main-nav a {
+    color: var(--lms-text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.lms-main-nav a:hover,
+.lms-main-nav a.active {
+    color: var(--lms-primary);
+}
+
+.lms-user-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-name {
+    font-size: 0.85rem;
+    color: var(--lms-text-secondary);
+}
+
+.lms-btn-login,
+.lms-btn-logout {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.lms-btn-login {
+    background: var(--lms-primary);
+    color: var(--lms-bg);
+}
+
+.lms-btn-logout {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--lms-text-primary);
+    border: 1px solid var(--lms-border);
+}
+
+/* Main Viewport */
+.lms-app-viewport {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Catalog View */
+.lms-page-container {
+    max-width: 1200px;
+    margin: 50px auto;
+    width: 90%;
+}
+
+.lms-page-title {
+    font-family: var(--lms-font-heading);
+    color: var(--lms-primary);
+    font-size: 2rem;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.course-card {
+    background: var(--lms-surface);
+    border: 1px solid var(--lms-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(47, 230, 214, 0.3);
+}
+
+.course-card-thumb {
+    height: 180px;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+}
+
+.course-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.course-card-content {
+    padding: 25px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.course-card-content h3 {
+    margin: 0 0 15px 0;
+    font-family: var(--lms-font-heading);
+    font-size: 1.1rem;
+    color: var(--lms-text-primary);
+}
+
+.course-card-content p {
+    font-size: 0.9rem;
+    color: var(--lms-text-secondary);
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+}
+
+.course-card-footer {
+    padding: 20px 25px;
+    border-top: 1px solid var(--lms-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lms-btn-action {
+    background: var(--lms-primary);
+    color: var(--lms-bg);
+    text-decoration: none;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+/* Footer */
+.lms-app-footer {
+    padding: 40px;
+    border-top: 1px solid var(--lms-border);
+    background: var(--lms-surface);
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--lms-text-secondary);
+}
+
+/* Transitions & Scrolls */
+.styled-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.styled-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}

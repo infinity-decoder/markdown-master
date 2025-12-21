@@ -15,7 +15,7 @@ class Module extends Abstract_Module {
 	/**
 	 * Components.
 	 */
-	public $public_view;
+	public $templates;
 	public $admin_ui;
 
 	/**
@@ -31,7 +31,7 @@ class Module extends Abstract_Module {
 		// $this->builder->init(); // Disable old builder
 		$this->studio->init();
 		$this->progress->init();
-		$this->public_view->init();
+		$this->templates->init();
 		$this->admin_ui->init();
 
 		// Access Control Hook
@@ -47,7 +47,7 @@ class Module extends Abstract_Module {
 		require_once __DIR__ . '/class-lms-builder.php';
 		require_once __DIR__ . '/class-lms-studio.php';
 		require_once __DIR__ . '/class-lms-progress.php';
-		require_once __DIR__ . '/class-lms-public.php';
+		require_once __DIR__ . '/class-lms-templates.php';
 		require_once __DIR__ . '/class-lms-admin-ui.php';
 		
 		$this->cpt        = new CPT();
@@ -55,7 +55,7 @@ class Module extends Abstract_Module {
 		$this->builder    = new Builder();
 		$this->studio     = new Studio();
 		$this->progress   = new Progress();
-		$this->public_view = new Public_View();
+		$this->templates  = new Templates();
 		$this->admin_ui    = new Admin_UI();
 	}
 
